@@ -1,0 +1,122 @@
+.survive {
+  font-family: "Teko", sans-serif;
+  font-size: 176px;
+  font-weight: bolder;
+  color: #E4003B;
+  line-height: 65%;
+}
+
+.rotate {
+  font-family: "Teko", sans-serif;
+  transform: rotate(-90deg);
+  top: 300px;
+  left: 20%;
+  white-space: nowrap;
+  transform-origin: bottom;
+  margin-top: 0px;
+  width: 0;
+}
+
+.advice {
+  font-family: "Teko", sans-serif;
+  font-size: 174px;
+  font-weight: bolder;
+  color: #E4003B;
+  transform: rotate(-90deg);
+  transform-origin: bottom;
+  margin: 0;
+  width: 0;
+}
+
+.text {
+  font-family: "Cairo", sans-serif;
+  font-size: 14px;
+}
+
+.a {
+  font-family: "Cairo", sans-serif;
+  font-size: 14px;
+  color: #EDF0F2;
+}
+
+.more {
+  color: black;
+}
+
+.header1 {
+  font-family: "Teko", sans-serif;
+  font-size: 60px;
+}
+
+.header2 {
+  font-family: "Teko", sans-serif;
+  font-size: 36px;
+  font-weight: medium;
+}
+
+.header3 {
+  font-family: "Teko", sans-serif;
+  font-size: 17px;
+  font-weight: bolder;
+}
+
+.gallery {
+  font-family: "Teko", sans-serif;
+  font-size: 106px;
+  font-weight: bolder;
+}
+
+.container {
+  padding-bottom: 100px;
+}
+
+.chances {
+  font-family: "Teko", sans-serif;
+  font-size: 280px;
+  font-weight: bolder;
+  color: #E4003B;
+  line-height: 100%;
+}
+
+.yourresults {
+  font-family: "Teko", sans-serif;
+  font-size: 174px;
+  font-weight: bolder;
+  color: white;
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  transform-origin: bottom;
+  width: 0;
+  top: 300%;
+}
+
+.endurance {
+  font-family: "Teko", sans-serif;
+  font-size: 174px;
+  font-weight: bolder;
+  color: white;
+  line-height: 65%;
+}
+
+.centered {
+  position: absolute;
+  top: 37%;
+  left: 41.5%;
+  transform: translate(-50%, -50%);
+}
+
+.footer {
+  position: relative;
+  text-align: center;
+}
+
+footer.row {
+  padding-bottom: 100px;
+  width: 1500px;
+}
+
+.footertext {
+  width: 250px;
+  padding-top: 100px;
+  margin-left: 100px;
+}

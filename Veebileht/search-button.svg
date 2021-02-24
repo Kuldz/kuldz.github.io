@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 46 46">
+  <g id="ico_search" transform="translate(-1769.75 -34.44)">
+    <circle id="Ellipse_7" data-name="Ellipse 7" cx="23" cy="23" r="23" transform="translate(1769.75 34.44)" fill="#e4003b"/>
+    <g id="ico_search-2" data-name="ico_search" transform="translate(1784.633 47.97)">
+      <path d="M-1-1.628,4.105,4.755" transform="translate(11.827 13.284)" fill="none" stroke="#edf0f2" stroke-linecap="round" stroke-width="2"/>
+      <g id="Ellipse_4" data-name="Ellipse 4" fill="none" stroke="#edf0f2" stroke-linecap="round" stroke-width="2">
+        <ellipse cx="7.334" cy="7.148" rx="7.334" ry="7.148" stroke="none"/>
+        <ellipse cx="7.334" cy="7.148" rx="6.334" ry="6.148" fill="none"/>
+      </g>
+    </g>
+  </g>
+</svg>
