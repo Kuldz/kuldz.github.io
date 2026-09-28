@@ -7,7 +7,11 @@ const games = await getGames();
 const completed = games.filter((g) => g.complete).length;
 const achievements = games.reduce((sum, g) => sum + g.earned, 0);
 const everything = games.filter((g) => g.everything).length;
-const platforms = new Set(games.map((g) => g.platform));
+// pc and playstation first, then any others in use (e.g. switch)
+const platformRank = (p: string) => (['pc', 'playstation'].includes(p) ? ['pc', 'playstation'].indexOf(p) : 99);
+const platforms = [...new Set(games.map((g) => g.platform))].sort(
+  (a, b) => platformRank(a) - platformRank(b) || a.localeCompare(b),
+);
 const platinums = games.filter((g) => g.platinum).length;
 
 // Text with bare URLs -> parts, so links render as real anchors.
@@ -38,9 +42,7 @@ const linkify = (text: string) =>
     </div>
     <div class="chips" role="group" aria-label="Platform">
       <button type="button" data-platform="all" aria-pressed="true">any platform</button>
-      <button type="button" data-platform="pc" aria-pressed="false">pc</button>
-      <button type="button" data-platform="playstation" aria-pressed="false">playstation</button>
-      {platforms.has('other') && <button type="button" data-platform="other" aria-pressed="false">other</button>}
+      {platforms.map((p) => <button type="button" data-platform={p} aria-pressed="false">{p}</button>)}
     </div>
     <label class="group-toggle"><input id="group" type="checkbox" /> group by franchise</label>
   </div>

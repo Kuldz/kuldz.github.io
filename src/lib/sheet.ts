@@ -1,6 +1,7 @@
 import { parse } from 'csv-parse/sync';
 import covers from '../data/covers.json'; // written by scripts/fetch-covers.mjs
 import { franchiseOf } from '../data/franchises';
+import { platformOverrides } from '../data/platforms';
 
 const SHEET_ID = '1ICIoxSlUR9LZJMr_RaHG2F1pBWHZuN8obxa_XUttOIk';
 
@@ -14,7 +15,7 @@ export type Game = {
   total: number;
   percent: number;
   platinum: boolean;
-  platform: 'pc' | 'playstation' | 'other';
+  platform: string; // 'pc', 'playstation', or whatever the sheet/overrides say (e.g. 'switch')
   notes: string;
   lastPlayed: string;
   lastPlayedTs: number;
@@ -77,15 +78,14 @@ const norm = (name: string) => name.toLowerCase().replace(/[™®]/g, '').trim()
 const findCol = (header: Row, prefix: string) =>
   header.findIndex((h) => h?.trim().toLowerCase().startsWith(prefix));
 
-// A "Platform" column in the sheet wins; otherwise infer from how the achievements are written.
+// Order of precedence: "Platform" column in the sheet, override list, then the achievements text.
 // Non-Steam PC launchers (Battle.net, Ubisoft, ...) still count as PC.
-function platformOf(column: string, achievements: string): Game['platform'] {
-  const c = column.toLowerCase();
+function platformOf(column: string, name: string, achievements: string): string {
+  const c = (column || platformOverrides[name] || '').toLowerCase().trim();
   if (/^(ps|playstation)/.test(c)) return 'playstation';
-  if (c && c !== 'pc' && c !== 'steam') return 'other';
-  if (c) return 'pc';
-  if (/trophies|platinum/i.test(achievements)) return 'playstation';
-  return 'pc';
+  if (c === 'steam') return 'pc';
+  if (c) return c;
+  return /trophies|platinum/i.test(achievements) ? 'playstation' : 'pc';
 }
 
 let gamesPromise: Promise<Game[]> | undefined;
@@ -120,7 +120,7 @@ function loadGames(): Promise<Game[]> {
           total,
           percent: total ? Math.round((earned / total) * 100) : -1, // -1: unknown total
           platinum: /platinum/i.test(achievements),
-          platform: platformOf(get(idx.platform), achievements),
+          platform: platformOf(get(idx.platform), get(idx.name), achievements),
           notes: get(idx.notes),
           lastPlayed,
           lastPlayedTs: parseDate(lastPlayed),
