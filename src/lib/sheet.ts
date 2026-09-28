@@ -23,6 +23,16 @@ export type Game = {
   ongoing: boolean; // marked "ongoing:" in the Backlog tab
 };
 
+export type Masterpiece = {
+  name: string;
+  icon: string;
+  rating: number;
+  gameplay: string;
+  story: string;
+  soundtrack: string;
+  achievements: string;
+};
+
 export type BacklogItem = {
   name: string;
   icon: string;
@@ -153,4 +163,32 @@ export async function getBacklog(): Promise<BacklogItem[]> {
   const [games, backlog] = await Promise.all([loadGames(), loadBacklog()]);
   const byName = new Map(games.map((g) => [norm(g.name), g]));
   return backlog.map((b) => ({ ...b, game: byName.get(norm(b.name)) }));
+}
+
+export async function getMasterpieces(): Promise<Masterpiece[]> {
+  const [header = [], ...body] = await fetchTab('Masterpieces');
+  const idx = {
+    name: findCol(header, 'game'),
+    rating: findCol(header, 'rating'),
+    gameplay: findCol(header, 'gameplay'),
+    story: findCol(header, 'story'),
+    soundtrack: findCol(header, 'soundtrack'),
+    achievements: findCol(header, 'achievements'),
+  };
+
+  return body
+    .map((row, i) => {
+      const get = (n: number) => (n >= 0 ? (row[n] ?? '').trim() : '');
+      return {
+        name: get(idx.name),
+        icon: iconFor('Masterpieces', i + 2),
+        rating: Number(get(idx.rating)) || 0,
+        gameplay: get(idx.gameplay),
+        story: get(idx.story),
+        soundtrack: get(idx.soundtrack),
+        achievements: get(idx.achievements),
+      };
+    })
+    .filter((m) => m.name)
+    .sort((a, b) => b.rating - a.rating);
 }

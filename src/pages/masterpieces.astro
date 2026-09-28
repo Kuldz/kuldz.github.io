@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import { getMasterpieces } from '../lib/sheet';
+
+const masterpieces = await getMasterpieces();
+---
+
+<Base title="Masterpieces – Kuldz">
+  <h1>masterpieces</h1>
+  <p class="stats">{masterpieces.length} games</p>
+
+  <ul class="grid">
+    {masterpieces.map((m) => (
+      <li class="tile">
+        {m.icon ? <img src={m.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{m.name[0]}</span>}
+        <div class="info">
+          <h2>{m.name}</h2>
+          <p class="tags">
+            {[m.gameplay, m.story, m.soundtrack].filter(Boolean).map((t) => <span class="tag">{t.toLowerCase()}</span>)}
+            {m.achievements && <span class="tag done">{m.achievements.toLowerCase() === 'all' ? '100%' : m.achievements}</span>}
+          </p>
+        </div>
+        <span class="rating">{m.rating}<small>/10</small></span>
+      </li>
+    ))}
+  </ul>
+</Base>
+
+<style>
+  .stats { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
+  .grid { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); }
+  .tile { background: var(--card); border-radius: 0.5rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.75rem; }
+  .icon { width: 6.5rem; aspect-ratio: 460 / 215; flex: none; object-fit: cover; border-radius: 0.3rem; }
+  .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); }
+  .info { flex: 1; min-width: 0; }
+  h2 { margin: 0 0 0.35rem; font-size: 1rem; overflow-wrap: anywhere; }
+  .tags { margin: 0; display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .tag { font-size: 0.7rem; color: var(--muted); border: 1px solid #2a2f3a; border-radius: 999px; padding: 0.05rem 0.5rem; }
+  .tag.done { color: #f5c542; border-color: #f5c542; }
+  .rating { font-size: 1.5rem; font-weight: bold; color: #f5c542; }
+  .rating small { font-size: 0.75rem; color: var(--muted); font-weight: normal; }
+</style>
