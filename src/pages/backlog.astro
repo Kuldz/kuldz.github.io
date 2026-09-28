@@ -1,0 +1,126 @@
+---
+import Base from '../layouts/Base.astro';
+import { getBacklog } from '../lib/sheet';
+import '../styles/list.css';
+
+const items = await getBacklog();
+const ongoing = items.filter((i) => i.ongoing);
+const queue = items.filter((i) => !i.ongoing);
+const totalBeat = queue.reduce((sum, i) => sum + (i.hoursBeat ?? 0), 0);
+const total100 = queue.reduce((sum, i) => sum + (i.hours100 ?? 0), 0);
+const fmt = (n: number) => n.toLocaleString('en');
+const hours = (h: number | null) => (h === null ? '–' : `${h}h`);
+---
+
+<Base title="Backlog – Kuldz">
+  <h1>backlog</h1>
+  <p class="stats">
+    {ongoing.length} ongoing · {queue.length} waiting · ~{fmt(totalBeat)}h to beat them all · ~{fmt(total100)}h to 100% them
+  </p>
+
+  {ongoing.length > 0 && (
+    <>
+      <h2 class="section-heading">now playing</h2>
+      <div class="list">
+        {ongoing.map((i) => (
+          <details class="game">
+            <summary>
+              {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
+              <span class="name">{i.name}</span>
+              <span class="count">{i.game?.achievements || `${hours(i.hoursBeat)} / ${hours(i.hours100)}`}</span>
+              <span class="pct">{i.game && i.game.percent >= 0 ? `${i.game.percent}%` : ''}</span>
+              <span class="date">{i.game?.lastPlayed}</span>
+            </summary>
+            <div class="body">
+              {i.why && <p class="notes">{i.why}</p>}
+              <p class="review">to beat: {hours(i.hoursBeat)} · to 100%: {hours(i.hours100)}</p>
+            </div>
+          </details>
+        ))}
+      </div>
+    </>
+  )}
+
+  <h2 class="section-heading">up next</h2>
+  <div class="controls">
+    <input id="search" type="search" placeholder="search…" aria-label="Search backlog" />
+    <select id="sort" aria-label="Sort by">
+      <option value="priority">priority</option>
+      <option value="beat">shortest to beat</option>
+      <option value="full">shortest to 100%</option>
+      <option value="name">name</option>
+    </select>
+    <div class="chips" role="group" aria-label="Filter">
+      <button type="button" data-filter="all" aria-pressed="true">all</button>
+      <button type="button" data-filter="new" aria-pressed="false">new to me</button>
+      <button type="button" data-filter="before" aria-pressed="false">played before</button>
+    </div>
+  </div>
+  <p id="count" class="stats" aria-live="polite"></p>
+
+  <div id="queue" class="list">
+    {queue.map((i) => (
+      <details
+        class="game"
+        data-name={i.name.toLowerCase()}
+        data-priority={i.priority}
+        data-beat={i.hoursBeat ?? ''}
+        data-full={i.hours100 ?? ''}
+        data-before={i.playedBefore}
+      >
+        <summary>
+          {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
+          <span class="name">{i.name}{i.playedBefore && <span class="tag">played before</span>}</span>
+          <span class="count">{hours(i.hoursBeat)} / {hours(i.hours100)}</span>
+          <span class="pct">P{i.priority}</span>
+          <span class="date"></span>
+        </summary>
+        <div class="body">
+          {i.why && <p class="notes">{i.why}</p>}
+          {i.game && <p class="review">already in games: {i.game.achievements || 'no achievements'} · last played {i.game.lastPlayed}</p>}
+        </div>
+      </details>
+    ))}
+  </div>
+</Base>
+
+<script>
+  const list = document.querySelector<HTMLElement>('#queue')!;
+  const rows = [...list.querySelectorAll<HTMLElement>('.game')];
+  const search = document.querySelector<HTMLInputElement>('#search')!;
+  const sort = document.querySelector<HTMLSelectElement>('#sort')!;
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+  const count = document.querySelector<HTMLElement>('#count')!;
+  let filter = 'all';
+
+  // Unknown hours (blank in the sheet) sort last.
+  const hoursOf = (el: HTMLElement, key: string) => (el.dataset[key] === '' ? Infinity : Number(el.dataset[key]));
+  const byName = (a: HTMLElement, b: HTMLElement) => a.dataset.name!.localeCompare(b.dataset.name!);
+  const comparators: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
+    priority: (a, b) => Number(b.dataset.priority) - Number(a.dataset.priority) || hoursOf(a, 'beat') - hoursOf(b, 'beat') || byName(a, b),
+    beat: (a, b) => hoursOf(a, 'beat') - hoursOf(b, 'beat') || byName(a, b),
+    full: (a, b) => hoursOf(a, 'full') - hoursOf(b, 'full') || byName(a, b),
+    name: byName,
+  };
+
+  function render() {
+    const q = search.value.trim().toLowerCase();
+    const visible = rows
+      .filter((r) => !q || r.dataset.name!.includes(q))
+      .filter((r) => filter === 'all' || (filter === 'before') === (r.dataset.before === 'true'))
+      .sort(comparators[sort.value]);
+    list.replaceChildren(...visible);
+    count.textContent = `showing ${visible.length} of ${rows.length}`;
+  }
+
+  search.addEventListener('input', render);
+  sort.addEventListener('change', render);
+  for (const chip of chips) {
+    chip.addEventListener('click', () => {
+      filter = chip.dataset.filter!;
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+      render();
+    });
+  }
+  render();
+</script>

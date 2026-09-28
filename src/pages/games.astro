@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getGames } from '../lib/sheet';
+import '../styles/list.css';
 
 const games = await getGames();
 const completed = games.filter((g) => g.complete).length;
@@ -30,12 +31,13 @@ const linkify = (text: string) =>
       <button type="button" data-filter="all" aria-pressed="true">all</button>
       <button type="button" data-filter="complete" aria-pressed="false">100%</button>
       <button type="button" data-filter="progress" aria-pressed="false">in progress</button>
+      <button type="button" data-filter="ongoing" aria-pressed="false">ongoing</button>
     </div>
     <label class="group-toggle"><input id="group" type="checkbox" /> group by franchise</label>
   </div>
   <p id="count" class="stats" aria-live="polite"></p>
 
-  <div id="games">
+  <div id="games" class="list">
     {games.map((g) => (
       <details
         class="game"
@@ -45,10 +47,11 @@ const linkify = (text: string) =>
         data-earned={g.earned}
         data-franchise={g.franchise}
         data-complete={g.complete}
+        data-ongoing={g.ongoing}
       >
         <summary>
           {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{g.name[0]}</span>}
-          <span class="name">{g.name}</span>
+          <span class="name">{g.name}{g.ongoing && <span class="tag">ongoing</span>}</span>
           <span class="count">{g.achievements || '–'}</span>
           <span class:list={['pct', { done: g.complete }]}>{g.complete ? '100%' : g.percent >= 0 ? `${g.percent}%` : ''}</span>
           <span class="date">{g.lastPlayed}</span>
@@ -96,7 +99,10 @@ const linkify = (text: string) =>
     const q = search.value.trim().toLowerCase();
     const visible = rows
       .filter((r) => !q || r.dataset.name!.includes(q) || r.dataset.franchise!.toLowerCase().includes(q))
-      .filter((r) => filter === 'all' || (filter === 'complete') === (r.dataset.complete === 'true'))
+            .filter((r) => {
+        if (filter === 'ongoing') return r.dataset.ongoing === 'true';
+        return filter === 'all' || (filter === 'complete') === (r.dataset.complete === 'true');
+      })
       .sort(comparators[sort.value]);
 
     const nodes: HTMLElement[] = [];
@@ -133,45 +139,3 @@ const linkify = (text: string) =>
   render();
 </script>
 
-<style>
-  .stats { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
-  .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 1rem 0 0.5rem; }
-  input[type='search'], select {
-    background: var(--card); color: var(--fg); border: 1px solid #2a2f3a;
-    border-radius: 0.35rem; padding: 0.4rem 0.6rem; font: inherit;
-  }
-  .chips { display: flex; gap: 0.35rem; }
-  .chips button {
-    background: var(--card); color: var(--muted); border: 1px solid #2a2f3a;
-    border-radius: 999px; padding: 0.3rem 0.8rem; font: inherit; cursor: pointer;
-  }
-  .chips button[aria-pressed='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-  .group-toggle { color: var(--muted); font-size: 0.9rem; display: flex; gap: 0.4rem; align-items: center; }
-
-  #games { margin-top: 1rem; display: grid; gap: 0.4rem; }
-  .group-heading { font-size: 0.95rem; color: var(--accent); margin: 1.25rem 0 0.25rem; }
-  .game { background: var(--card); border-radius: 0.5rem; }
-  .game summary {
-    display: grid; grid-template-columns: 2.5rem 1fr auto 3.5rem 6.5rem;
-    align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; cursor: pointer; list-style: none;
-  }
-  .game summary::-webkit-details-marker { display: none; }
-  .game summary:hover { background: #1e222b; border-radius: 0.5rem; }
-  .icon { width: 2.5rem; height: 2.5rem; object-fit: contain; border-radius: 0.25rem; }
-  .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); }
-  .name { font-weight: bold; overflow-wrap: anywhere; }
-  .count, .date { color: var(--muted); font-size: 0.85rem; text-align: right; white-space: nowrap; }
-  .pct { font-size: 0.85rem; color: var(--muted); text-align: right; }
-  .pct.done { color: #f5c542; font-weight: bold; }
-  .body { padding: 0 0.75rem 0.75rem 4rem; }
-  .body p { margin: 0.4rem 0 0; overflow-wrap: anywhere; }
-  .franchise { color: var(--accent); font-size: 0.8rem; }
-  .notes { font-size: 0.9rem; }
-  .review { font-size: 0.85rem; color: var(--muted); white-space: pre-line; }
-
-  @media (max-width: 40rem) {
-    .game summary { grid-template-columns: 2.5rem 1fr auto 3rem; }
-    .date { display: none; }
-    .body { padding-left: 0.75rem; }
-  }
-</style>

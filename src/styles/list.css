@@ -1,0 +1,46 @@
+/* Shared by the games and backlog pages: stats line, controls, expandable rows. */
+.stats { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 1rem 0 0.5rem; }
+input[type='search'], select {
+  background: var(--card); color: var(--fg); border: 1px solid #2a2f3a;
+  border-radius: 0.35rem; padding: 0.4rem 0.6rem; font: inherit;
+}
+.chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.chips button {
+  background: var(--card); color: var(--muted); border: 1px solid #2a2f3a;
+  border-radius: 999px; padding: 0.3rem 0.8rem; font: inherit; cursor: pointer;
+}
+.chips button[aria-pressed='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+.group-toggle { color: var(--muted); font-size: 0.9rem; display: flex; gap: 0.4rem; align-items: center; }
+
+.list { margin-top: 1rem; display: grid; gap: 0.4rem; }
+.section-heading { font-size: 0.95rem; color: var(--accent); margin: 1.5rem 0 0; }
+.group-heading { font-size: 0.95rem; color: var(--accent); margin: 1.25rem 0 0.25rem; }
+.game { background: var(--card); border-radius: 0.5rem; }
+.game summary {
+  display: grid; grid-template-columns: 2.5rem 1fr auto 3.5rem 6.5rem;
+  align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; cursor: pointer; list-style: none;
+}
+.game summary::-webkit-details-marker { display: none; }
+.game summary:hover { background: #1e222b; border-radius: 0.5rem; }
+.icon { width: 2.5rem; height: 2.5rem; object-fit: contain; border-radius: 0.25rem; }
+.placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); }
+.name { font-weight: bold; overflow-wrap: anywhere; }
+.tag {
+  font-size: 0.7rem; font-weight: normal; color: var(--bg); background: var(--accent);
+  border-radius: 999px; padding: 0.1rem 0.5rem; margin-left: 0.5rem; vertical-align: middle;
+}
+.count, .date { color: var(--muted); font-size: 0.85rem; text-align: right; white-space: nowrap; }
+.pct { font-size: 0.85rem; color: var(--muted); text-align: right; }
+.pct.done { color: #f5c542; font-weight: bold; }
+.body { padding: 0 0.75rem 0.75rem 4rem; }
+.body p { margin: 0.4rem 0 0; overflow-wrap: anywhere; }
+.franchise { color: var(--accent); font-size: 0.8rem; }
+.notes { font-size: 0.9rem; }
+.review { font-size: 0.85rem; color: var(--muted); white-space: pre-line; }
+
+@media (max-width: 40rem) {
+  .game summary { grid-template-columns: 2.5rem 1fr auto 3rem; }
+  .date { display: none; }
+  .body { padding-left: 0.75rem; }
+}
