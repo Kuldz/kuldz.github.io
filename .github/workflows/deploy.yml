@@ -27,8 +27,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-        env:
-          SHEETS_API_KEY: ${{ secrets.SHEETS_API_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

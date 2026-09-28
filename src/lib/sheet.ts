@@ -1,7 +1,7 @@
 import { parse } from 'csv-parse/sync';
+import covers from '../data/covers.json'; // written by scripts/fetch-covers.mjs
 
 const SHEET_ID = '1ICIoxSlUR9LZJMr_RaHG2F1pBWHZuN8obxa_XUttOIk';
-const API_KEY: string | undefined = import.meta.env.SHEETS_API_KEY ?? process.env.SHEETS_API_KEY;
 
 export type Game = {
   name: string;
@@ -17,31 +17,12 @@ export type Game = {
 
 type Row = string[];
 
-async function fetchJson(url: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Sheets request failed: ${res.status} ${url.replace(/key=[^&]+/, 'key=***')}`);
-  return res.json();
-}
-
-// Sheets API: displayed values plus, separately, column A as raw formulas (=IMAGE("url")).
-async function fetchViaApi(tab: string): Promise<{ rows: Row[]; icons: string[] }> {
-  const base = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values`;
-  const tabName = encodeURIComponent(tab);
-  const [values, formulas] = await Promise.all([
-    fetchJson(`${base}/${tabName}?key=${API_KEY}`),
-    fetchJson(`${base}/${tabName}!A:A?valueRenderOption=FORMULA&key=${API_KEY}`),
-  ]);
-  const icons = (formulas.values ?? []).map((r: string[]) => /=IMAGE\(\s*"([^"]+)"/i.exec(r[0] ?? '')?.[1] ?? '');
-  return { rows: values.values ?? [], icons };
-}
-
-// No key: public CSV export. Same data, but IMAGE() cells come through empty.
-async function fetchViaCsv(tab: string): Promise<{ rows: Row[]; icons: string[] }> {
+// The sheet is shared publicly, so Google serves each tab as CSV at build time.
+async function fetchTab(tab: string): Promise<Row[]> {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch "${tab}" tab: ${res.status}`);
-  const rows: Row[] = parse(await res.text(), { skip_empty_lines: true, relax_column_count: true });
-  return { rows, icons: [] };
+  return parse(await res.text(), { relax_column_count: true });
 }
 
 // "28.09.2026" -> timestamp
@@ -51,8 +32,7 @@ function parseDate(s: string): number {
 }
 
 export async function getGames(): Promise<Game[]> {
-  const { rows, icons } = API_KEY ? await fetchViaApi('Games') : await fetchViaCsv('Games');
-  console.log(`[sheet] source=${API_KEY ? 'api' : 'csv (no SHEETS_API_KEY)'} rows=${rows.length} icons=${icons.filter(Boolean).length}`);
+  const rows = await fetchTab('Games');
   const [header = [], ...body] = rows;
   const col = (prefix: string) => header.findIndex((h) => h?.trim().toLowerCase().startsWith(prefix));
   const idx = {
@@ -70,7 +50,7 @@ export async function getGames(): Promise<Game[]> {
       const lastPlayed = get(idx.last);
       return {
         name: get(idx.name),
-        icon: icons[i + 1] ?? '', // +1: icons include the header row
+        icon: (covers as Record<string, string>)[i + 2] ?? '', // i=0 is sheet row 2 (row 1 is the header)
         earned,
         total,
         percent: total ? Math.round((earned / total) * 100) : 0,

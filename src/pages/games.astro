@@ -10,8 +10,10 @@ const games = await getGames();
   <ul class="grid">
     {games.map((g) => (
       <li class="card">
-        {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <div class="icon placeholder" aria-hidden="true">{g.name[0]}</div>}
-        <h2>{g.name}</h2>
+        <div class="title">
+          {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <div class="icon placeholder" aria-hidden="true">{g.name[0]}</div>}
+          <h2>{g.name}</h2>
+        </div>
         <div class="bar" role="progressbar" aria-valuenow={g.percent} aria-valuemin="0" aria-valuemax="100">
           <span style={`width:${g.percent}%`}></span>
         </div>
@@ -26,9 +28,10 @@ const games = await getGames();
 <style>
   .grid { list-style: none; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
   .card { background: var(--card); padding: 1rem; border-radius: 0.5rem; }
-  .icon { width: 100%; aspect-ratio: 460 / 215; object-fit: cover; border-radius: 0.35rem; margin-bottom: 0.75rem; display: block; }
-  .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); font-size: 2rem; }
-  .card h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+  .title { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .icon { width: 2.5rem; height: 2.5rem; flex: none; object-fit: contain; border-radius: 0.25rem; }
+  .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); }
+  .card h2 { margin: 0; font-size: 1.05rem; }
   .bar { height: 0.5rem; background: #2a2f3a; border-radius: 0.25rem; overflow: hidden; }
   .bar span { display: block; height: 100%; background: var(--accent); }
   .meta { color: var(--muted); font-size: 0.85rem; margin: 0.5rem 0 0; }

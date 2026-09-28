@@ -9,11 +9,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "prebuild": "node scripts/fetch-covers.mjs",
+    "predev": "node scripts/fetch-covers.mjs"
   },
   "dependencies": {
     "astro": "^7.3.5",
-    "csv-parse": "^7.0.3"
+    "csv-parse": "^7.0.3",
+    "fflate": "^0.8.3"
   },
   "allowScripts": {
     "esbuild": true
