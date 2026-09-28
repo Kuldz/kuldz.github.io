@@ -78,13 +78,13 @@ const findCol = (header: Row, prefix: string) =>
   header.findIndex((h) => h?.trim().toLowerCase().startsWith(prefix));
 
 // A "Platform" column in the sheet wins; otherwise infer from how the achievements are written.
+// Non-Steam PC launchers (Battle.net, Ubisoft, ...) still count as PC.
 function platformOf(column: string, achievements: string): Game['platform'] {
   const c = column.toLowerCase();
   if (/^(ps|playstation)/.test(c)) return 'playstation';
   if (c && c !== 'pc' && c !== 'steam') return 'other';
   if (c) return 'pc';
   if (/trophies|platinum/i.test(achievements)) return 'playstation';
-  if (/not steam|\/\?/i.test(achievements)) return 'other';
   return 'pc';
 }
 

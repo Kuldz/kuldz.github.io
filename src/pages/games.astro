@@ -7,6 +7,7 @@ const games = await getGames();
 const completed = games.filter((g) => g.complete).length;
 const achievements = games.reduce((sum, g) => sum + g.earned, 0);
 const everything = games.filter((g) => g.everything).length;
+const platforms = new Set(games.map((g) => g.platform));
 const platinums = games.filter((g) => g.platinum).length;
 
 // Text with bare URLs -> parts, so links render as real anchors.
@@ -39,7 +40,7 @@ const linkify = (text: string) =>
       <button type="button" data-platform="all" aria-pressed="true">any platform</button>
       <button type="button" data-platform="pc" aria-pressed="false">pc</button>
       <button type="button" data-platform="playstation" aria-pressed="false">playstation</button>
-      <button type="button" data-platform="other" aria-pressed="false">other</button>
+      {platforms.has('other') && <button type="button" data-platform="other" aria-pressed="false">other</button>}
     </div>
     <label class="group-toggle"><input id="group" type="checkbox" /> group by franchise</label>
   </div>
