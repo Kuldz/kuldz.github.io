@@ -1,0 +1,49 @@
+---
+const { title = 'Kuldz' } = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">kuldz</a>
+      <nav>
+        <a href="/games">games</a>
+      </nav>
+    </header>
+    <main><slot /></main>
+    <footer>© Kuldz</footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg: #0f1115;
+    --fg: #e6e6e6;
+    --muted: #8b93a1;
+    --card: #181b22;
+    --accent: #7dd3a8;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: ui-monospace, 'Cascadia Code', Menlo, monospace;
+    line-height: 1.5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  header, main, footer { max-width: 60rem; margin: 0 auto; padding: 1rem; }
+  header { display: flex; justify-content: space-between; align-items: baseline; }
+  header nav { display: flex; gap: 1rem; }
+  .brand { font-weight: bold; font-size: 1.25rem; }
+  footer { color: var(--muted); font-size: 0.85rem; }
+</style>

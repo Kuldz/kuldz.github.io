@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro';
+import { getGames } from '../lib/sheet';
+
+const games = await getGames();
+---
+
+<Base title="Games – Kuldz">
+  <h1>games</h1>
+  <ul class="grid">
+    {games.map((g) => (
+      <li class="card">
+        {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <div class="icon placeholder" aria-hidden="true">{g.name[0]}</div>}
+        <h2>{g.name}</h2>
+        <div class="bar" role="progressbar" aria-valuenow={g.percent} aria-valuemin="0" aria-valuemax="100">
+          <span style={`width:${g.percent}%`}></span>
+        </div>
+        <p class="meta">{g.earned}/{g.total} · {g.percent}%{g.lastPlayed && ` · ${g.lastPlayed}`}</p>
+        {g.notes && <p class="notes">{g.notes}</p>}
+        {g.review && <p class="review">{g.review}</p>}
+      </li>
+    ))}
+  </ul>
+</Base>
+
+<style>
+  .grid { list-style: none; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
+  .card { background: var(--card); padding: 1rem; border-radius: 0.5rem; }
+  .icon { width: 100%; aspect-ratio: 460 / 215; object-fit: cover; border-radius: 0.35rem; margin-bottom: 0.75rem; display: block; }
+  .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); font-size: 2rem; }
+  .card h2 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+  .bar { height: 0.5rem; background: #2a2f3a; border-radius: 0.25rem; overflow: hidden; }
+  .bar span { display: block; height: 100%; background: var(--accent); }
+  .meta { color: var(--muted); font-size: 0.85rem; margin: 0.5rem 0 0; }
+  .notes { font-size: 0.9rem; margin: 0.5rem 0 0; }
+  .review { font-size: 0.85rem; color: var(--muted); margin: 0.5rem 0 0; white-space: pre-line; }
+</style>
