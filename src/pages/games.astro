@@ -3,38 +3,175 @@ import Base from '../layouts/Base.astro';
 import { getGames } from '../lib/sheet';
 
 const games = await getGames();
+const completed = games.filter((g) => g.complete).length;
+const achievements = games.reduce((sum, g) => sum + g.earned, 0);
+const platinums = games.filter((g) => g.platinum).length;
+
+// Text with bare URLs -> parts, so links render as real anchors.
+const linkify = (text: string) =>
+  text.split(/(https?:\/\/\S+)/g).map((part) => ({ part, isUrl: /^https?:\/\//.test(part) }));
 ---
 
 <Base title="Games – Kuldz">
   <h1>games</h1>
-  <ul class="grid">
+  <p class="stats">
+    {games.length} games · {completed} at 100% · {platinums} platinum · {achievements.toLocaleString('en')} achievements
+  </p>
+
+  <div class="controls">
+    <input id="search" type="search" placeholder="search…" aria-label="Search games" />
+    <select id="sort" aria-label="Sort by">
+      <option value="recent">last played</option>
+      <option value="name">name</option>
+      <option value="pct">completion</option>
+      <option value="earned">achievements earned</option>
+    </select>
+    <div class="chips" role="group" aria-label="Filter">
+      <button type="button" data-filter="all" aria-pressed="true">all</button>
+      <button type="button" data-filter="complete" aria-pressed="false">100%</button>
+      <button type="button" data-filter="progress" aria-pressed="false">in progress</button>
+    </div>
+    <label class="group-toggle"><input id="group" type="checkbox" /> group by franchise</label>
+  </div>
+  <p id="count" class="stats" aria-live="polite"></p>
+
+  <div id="games">
     {games.map((g) => (
-      <li class="card">
-        <div class="title">
-          {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <div class="icon placeholder" aria-hidden="true">{g.name[0]}</div>}
-          <h2>{g.name}</h2>
+      <details
+        class="game"
+        data-name={g.name.toLowerCase()}
+        data-ts={g.lastPlayedTs}
+        data-pct={g.percent}
+        data-earned={g.earned}
+        data-franchise={g.franchise}
+        data-complete={g.complete}
+      >
+        <summary>
+          {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{g.name[0]}</span>}
+          <span class="name">{g.name}</span>
+          <span class="count">{g.achievements || '–'}</span>
+          <span class:list={['pct', { done: g.complete }]}>{g.complete ? '100%' : g.percent >= 0 ? `${g.percent}%` : ''}</span>
+          <span class="date">{g.lastPlayed}</span>
+        </summary>
+        <div class="body">
+          {g.franchise && <p class="franchise">{g.franchise}</p>}
+          {g.notes && (
+            <p class="notes">
+              {linkify(g.notes).map((s) => (s.isUrl ? <a href={s.part} rel="noopener">{s.part}</a> : s.part))}
+            </p>
+          )}
+          {g.review && <p class="review">{g.review}</p>}
         </div>
-        <div class="bar" role="progressbar" aria-valuenow={g.percent} aria-valuemin="0" aria-valuemax="100">
-          <span style={`width:${g.percent}%`}></span>
-        </div>
-        <p class="meta">{g.earned}/{g.total} · {g.percent}%{g.lastPlayed && ` · ${g.lastPlayed}`}</p>
-        {g.notes && <p class="notes">{g.notes}</p>}
-        {g.review && <p class="review">{g.review}</p>}
-      </li>
+      </details>
     ))}
-  </ul>
+  </div>
 </Base>
 
+<script>
+  const list = document.querySelector<HTMLElement>('#games')!;
+  const rows = [...list.querySelectorAll<HTMLElement>('.game')];
+  const search = document.querySelector<HTMLInputElement>('#search')!;
+  const sort = document.querySelector<HTMLSelectElement>('#sort')!;
+  const group = document.querySelector<HTMLInputElement>('#group')!;
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+  const count = document.querySelector<HTMLElement>('#count')!;
+  let filter = 'all';
+
+  const num = (el: HTMLElement, key: string) => Number(el.dataset[key]);
+  const comparators: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
+    recent: (a, b) => num(b, 'ts') - num(a, 'ts'),
+    name: (a, b) => a.dataset.name!.localeCompare(b.dataset.name!),
+    pct: (a, b) => num(b, 'pct') - num(a, 'pct') || num(b, 'earned') - num(a, 'earned'),
+    earned: (a, b) => num(b, 'earned') - num(a, 'earned'),
+  };
+
+  function heading(text: string, n: number) {
+    const h = document.createElement('h2');
+    h.className = 'group-heading';
+    h.textContent = `${text} (${n})`;
+    return h;
+  }
+
+  function render() {
+    const q = search.value.trim().toLowerCase();
+    const visible = rows
+      .filter((r) => !q || r.dataset.name!.includes(q) || r.dataset.franchise!.toLowerCase().includes(q))
+      .filter((r) => filter === 'all' || (filter === 'complete') === (r.dataset.complete === 'true'))
+      .sort(comparators[sort.value]);
+
+    const nodes: HTMLElement[] = [];
+    if (group.checked) {
+      // Groups appear in the order their best-ranked game does under the current sort.
+      const groups = new Map<string, HTMLElement[]>();
+      for (const r of visible) {
+        const key = r.dataset.franchise || '';
+        groups.set(key, [...(groups.get(key) ?? []), r]);
+      }
+      const standalone = groups.get('') ?? [];
+      for (const [key, members] of groups) {
+        if (key) nodes.push(heading(key, members.length), ...members);
+      }
+      if (standalone.length) nodes.push(heading('standalone', standalone.length), ...standalone);
+    } else {
+      nodes.push(...visible);
+    }
+
+    list.replaceChildren(...nodes);
+    count.textContent = `showing ${visible.length} of ${rows.length}`;
+  }
+
+  search.addEventListener('input', render);
+  sort.addEventListener('change', render);
+  group.addEventListener('change', render);
+  for (const chip of chips) {
+    chip.addEventListener('click', () => {
+      filter = chip.dataset.filter!;
+      chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+      render();
+    });
+  }
+  render();
+</script>
+
 <style>
-  .grid { list-style: none; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
-  .card { background: var(--card); padding: 1rem; border-radius: 0.5rem; }
-  .title { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
-  .icon { width: 2.5rem; height: 2.5rem; flex: none; object-fit: contain; border-radius: 0.25rem; }
+  .stats { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 1rem 0 0.5rem; }
+  input[type='search'], select {
+    background: var(--card); color: var(--fg); border: 1px solid #2a2f3a;
+    border-radius: 0.35rem; padding: 0.4rem 0.6rem; font: inherit;
+  }
+  .chips { display: flex; gap: 0.35rem; }
+  .chips button {
+    background: var(--card); color: var(--muted); border: 1px solid #2a2f3a;
+    border-radius: 999px; padding: 0.3rem 0.8rem; font: inherit; cursor: pointer;
+  }
+  .chips button[aria-pressed='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+  .group-toggle { color: var(--muted); font-size: 0.9rem; display: flex; gap: 0.4rem; align-items: center; }
+
+  #games { margin-top: 1rem; display: grid; gap: 0.4rem; }
+  .group-heading { font-size: 0.95rem; color: var(--accent); margin: 1.25rem 0 0.25rem; }
+  .game { background: var(--card); border-radius: 0.5rem; }
+  .game summary {
+    display: grid; grid-template-columns: 2.5rem 1fr auto 3.5rem 6.5rem;
+    align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; cursor: pointer; list-style: none;
+  }
+  .game summary::-webkit-details-marker { display: none; }
+  .game summary:hover { background: #1e222b; border-radius: 0.5rem; }
+  .icon { width: 2.5rem; height: 2.5rem; object-fit: contain; border-radius: 0.25rem; }
   .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); }
-  .card h2 { margin: 0; font-size: 1.05rem; }
-  .bar { height: 0.5rem; background: #2a2f3a; border-radius: 0.25rem; overflow: hidden; }
-  .bar span { display: block; height: 100%; background: var(--accent); }
-  .meta { color: var(--muted); font-size: 0.85rem; margin: 0.5rem 0 0; }
-  .notes { font-size: 0.9rem; margin: 0.5rem 0 0; }
-  .review { font-size: 0.85rem; color: var(--muted); margin: 0.5rem 0 0; white-space: pre-line; }
+  .name { font-weight: bold; overflow-wrap: anywhere; }
+  .count, .date { color: var(--muted); font-size: 0.85rem; text-align: right; white-space: nowrap; }
+  .pct { font-size: 0.85rem; color: var(--muted); text-align: right; }
+  .pct.done { color: #f5c542; font-weight: bold; }
+  .body { padding: 0 0.75rem 0.75rem 4rem; }
+  .body p { margin: 0.4rem 0 0; overflow-wrap: anywhere; }
+  .franchise { color: var(--accent); font-size: 0.8rem; }
+  .notes { font-size: 0.9rem; }
+  .review { font-size: 0.85rem; color: var(--muted); white-space: pre-line; }
+
+  @media (max-width: 40rem) {
+    .game summary { grid-template-columns: 2.5rem 1fr auto 3rem; }
+    .date { display: none; }
+    .body { padding-left: 0.75rem; }
+  }
 </style>
