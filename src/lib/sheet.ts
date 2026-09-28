@@ -52,6 +52,7 @@ function parseDate(s: string): number {
 
 export async function getGames(): Promise<Game[]> {
   const { rows, icons } = API_KEY ? await fetchViaApi('Games') : await fetchViaCsv('Games');
+  console.log(`[sheet] source=${API_KEY ? 'api' : 'csv (no SHEETS_API_KEY)'} rows=${rows.length} icons=${icons.filter(Boolean).length}`);
   const [header = [], ...body] = rows;
   const col = (prefix: string) => header.findIndex((h) => h?.trim().toLowerCase().startsWith(prefix));
   const idx = {
