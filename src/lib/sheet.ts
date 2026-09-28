@@ -14,6 +14,7 @@ export type Game = {
   total: number;
   percent: number;
   platinum: boolean;
+  platform: 'pc' | 'playstation' | 'other';
   notes: string;
   lastPlayed: string;
   lastPlayedTs: number;
@@ -75,6 +76,17 @@ const norm = (name: string) => name.toLowerCase().replace(/[™®]/g, '').trim()
 const findCol = (header: Row, prefix: string) =>
   header.findIndex((h) => h?.trim().toLowerCase().startsWith(prefix));
 
+// A "Platform" column in the sheet wins; otherwise infer from how the achievements are written.
+function platformOf(column: string, achievements: string): Game['platform'] {
+  const c = column.toLowerCase();
+  if (/^(ps|playstation)/.test(c)) return 'playstation';
+  if (c && c !== 'pc' && c !== 'steam') return 'other';
+  if (c) return 'pc';
+  if (/trophies|platinum/i.test(achievements)) return 'playstation';
+  if (/not steam|\/\?/i.test(achievements)) return 'other';
+  return 'pc';
+}
+
 let gamesPromise: Promise<Game[]> | undefined;
 function loadGames(): Promise<Game[]> {
   gamesPromise ??= (async () => {
@@ -86,6 +98,7 @@ function loadGames(): Promise<Game[]> {
       last: findCol(header, 'last played'),
       review: findCol(header, 'review'),
       franchise: findCol(header, 'franchise'),
+      platform: findCol(header, 'platform'),
     };
 
     return body
@@ -105,6 +118,7 @@ function loadGames(): Promise<Game[]> {
           total,
           percent: total ? Math.round((earned / total) * 100) : -1, // -1: unknown total
           platinum: /platinum/i.test(achievements),
+          platform: platformOf(get(idx.platform), achievements),
           notes: get(idx.notes),
           lastPlayed,
           lastPlayedTs: parseDate(lastPlayed),

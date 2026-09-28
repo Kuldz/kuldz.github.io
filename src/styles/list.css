@@ -30,6 +30,8 @@ input[type='search'], select {
   font-size: 0.7rem; font-weight: normal; color: var(--bg); background: var(--accent);
   border-radius: 999px; padding: 0.1rem 0.5rem; margin-left: 0.5rem; vertical-align: middle;
 }
+.tag.ps { background: #6ea8ff; }
+.tag.plat { background: #f5c542; }
 .count, .date { color: var(--muted); font-size: 0.85rem; text-align: right; white-space: nowrap; }
 .pct { font-size: 0.85rem; color: var(--muted); text-align: right; }
 .pct.done { color: #f5c542; font-weight: bold; }

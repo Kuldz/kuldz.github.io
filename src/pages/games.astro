@@ -33,6 +33,12 @@ const linkify = (text: string) =>
       <button type="button" data-filter="progress" aria-pressed="false">in progress</button>
       <button type="button" data-filter="ongoing" aria-pressed="false">ongoing</button>
     </div>
+    <div class="chips" role="group" aria-label="Platform">
+      <button type="button" data-platform="all" aria-pressed="true">any platform</button>
+      <button type="button" data-platform="pc" aria-pressed="false">pc</button>
+      <button type="button" data-platform="playstation" aria-pressed="false">playstation</button>
+      <button type="button" data-platform="other" aria-pressed="false">other</button>
+    </div>
     <label class="group-toggle"><input id="group" type="checkbox" /> group by franchise</label>
   </div>
   <p id="count" class="stats" aria-live="polite"></p>
@@ -48,10 +54,11 @@ const linkify = (text: string) =>
         data-franchise={g.franchise}
         data-complete={g.complete}
         data-ongoing={g.ongoing}
+        data-platform={g.platform}
       >
         <summary>
           {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{g.name[0]}</span>}
-          <span class="name">{g.name}{g.ongoing && <span class="tag">ongoing</span>}</span>
+          <span class="name">{g.name}{g.ongoing && <span class="tag">ongoing</span>}{g.platform === 'playstation' && <span class="tag ps">ps</span>}{g.platinum && <span class="tag plat">platinum</span>}</span>
           <span class="count">{g.achievements || '–'}</span>
           <span class:list={['pct', { done: g.complete }]}>{g.complete ? '100%' : g.percent >= 0 ? `${g.percent}%` : ''}</span>
           <span class="date">{g.lastPlayed}</span>
@@ -77,8 +84,10 @@ const linkify = (text: string) =>
   const sort = document.querySelector<HTMLSelectElement>('#sort')!;
   const group = document.querySelector<HTMLInputElement>('#group')!;
   const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+  const platformChips = [...document.querySelectorAll<HTMLButtonElement>('[data-platform]')];
   const count = document.querySelector<HTMLElement>('#count')!;
   let filter = 'all';
+  let platform = 'all';
 
   const num = (el: HTMLElement, key: string) => Number(el.dataset[key]);
   const comparators: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
@@ -103,6 +112,7 @@ const linkify = (text: string) =>
         if (filter === 'ongoing') return r.dataset.ongoing === 'true';
         return filter === 'all' || (filter === 'complete') === (r.dataset.complete === 'true');
       })
+      .filter((r) => platform === 'all' || r.dataset.platform === platform)
       .sort(comparators[sort.value]);
 
     const nodes: HTMLElement[] = [];
@@ -133,6 +143,13 @@ const linkify = (text: string) =>
     chip.addEventListener('click', () => {
       filter = chip.dataset.filter!;
       chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+      render();
+    });
+  }
+  for (const chip of platformChips) {
+    chip.addEventListener('click', () => {
+      platform = chip.dataset.platform!;
+      platformChips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
       render();
     });
   }
