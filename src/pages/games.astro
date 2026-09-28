@@ -6,6 +6,7 @@ import '../styles/list.css';
 const games = await getGames();
 const completed = games.filter((g) => g.complete).length;
 const achievements = games.reduce((sum, g) => sum + g.earned, 0);
+const everything = games.filter((g) => g.everything).length;
 const platinums = games.filter((g) => g.platinum).length;
 
 // Text with bare URLs -> parts, so links render as real anchors.
@@ -16,7 +17,7 @@ const linkify = (text: string) =>
 <Base title="Games – Kuldz">
   <h1>games</h1>
   <p class="stats">
-    {games.length} games · {completed} at 100% · {platinums} platinum · {achievements.toLocaleString('en')} achievements
+    {games.length} games · {completed} at 100% · {platinums} platinum {everything > 0 && `· ${everything} everything `}· {achievements.toLocaleString('en')} achievements
   </p>
 
   <div class="controls">
@@ -32,6 +33,7 @@ const linkify = (text: string) =>
       <button type="button" data-filter="complete" aria-pressed="false">100%</button>
       <button type="button" data-filter="progress" aria-pressed="false">in progress</button>
       <button type="button" data-filter="ongoing" aria-pressed="false">ongoing</button>
+      {everything > 0 && <button type="button" data-filter="everything" aria-pressed="false">everything</button>}
     </div>
     <div class="chips" role="group" aria-label="Platform">
       <button type="button" data-platform="all" aria-pressed="true">any platform</button>
@@ -54,11 +56,12 @@ const linkify = (text: string) =>
         data-franchise={g.franchise}
         data-complete={g.complete}
         data-ongoing={g.ongoing}
+        data-everything={g.everything}
         data-platform={g.platform}
       >
         <summary>
           {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{g.name[0]}</span>}
-          <span class="name">{g.name}{g.ongoing && <span class="tag">ongoing</span>}{g.platform === 'playstation' && <span class="tag ps">ps</span>}{g.platinum && <span class="tag plat">platinum</span>}</span>
+          <span class="name">{g.name}{g.ongoing && <span class="tag">ongoing</span>}{g.platform === 'playstation' && <span class="tag ps">ps</span>}{g.platinum && <span class="tag plat">platinum</span>}{g.everything && <span class="tag plat">everything</span>}</span>
           <span class="count">{g.achievements || '–'}</span>
           <span class:list={['pct', { done: g.complete }]}>{g.complete ? '100%' : g.percent >= 0 ? `${g.percent}%` : ''}</span>
           <span class="date">{g.lastPlayed}</span>
@@ -110,6 +113,7 @@ const linkify = (text: string) =>
       .filter((r) => !q || r.dataset.name!.includes(q) || r.dataset.franchise!.toLowerCase().includes(q))
             .filter((r) => {
         if (filter === 'ongoing') return r.dataset.ongoing === 'true';
+        if (filter === 'everything') return r.dataset.everything === 'true';
         return filter === 'all' || (filter === 'complete') === (r.dataset.complete === 'true');
       })
       .filter((r) => platform === 'all' || r.dataset.platform === platform)

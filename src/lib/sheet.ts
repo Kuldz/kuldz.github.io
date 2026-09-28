@@ -21,6 +21,7 @@ export type Game = {
   review: string;
   franchise: string;
   complete: boolean;
+  everything: boolean; // optional "Everything" column: played to pieces, beyond achievements
   ongoing: boolean; // marked "ongoing:" in the Backlog tab
 };
 
@@ -99,6 +100,7 @@ function loadGames(): Promise<Game[]> {
       review: findCol(header, 'review'),
       franchise: findCol(header, 'franchise'),
       platform: findCol(header, 'platform'),
+      everything: findCol(header, 'everything'),
     };
 
     return body
@@ -125,6 +127,7 @@ function loadGames(): Promise<Game[]> {
           review: get(idx.review),
           franchise: get(idx.franchise) || franchiseOf(get(idx.name)),
           complete: /\(all\)/i.test(achievements) || (total > 0 && earned >= total),
+          everything: !!get(idx.everything) && !/^(no|n|0|false|-)$/i.test(get(idx.everything)),
           ongoing: false,
         };
       })
