@@ -29,6 +29,7 @@ input[type='search'], select {
 .tag {
   font-size: 0.7rem; font-weight: normal; color: var(--bg); background: var(--accent);
   border-radius: 999px; padding: 0.1rem 0.5rem; margin-left: 0.5rem; vertical-align: middle;
+  white-space: nowrap; display: inline-block;
 }
 .tag.ps { background: #6ea8ff; }
 .tag.plat { background: #f5c542; }

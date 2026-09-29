@@ -10,6 +10,9 @@ const totalBeat = queue.reduce((sum, i) => sum + (i.hoursBeat ?? 0), 0);
 const total100 = queue.reduce((sum, i) => sum + (i.hours100 ?? 0), 0);
 const fmt = (n: number) => n.toLocaleString('en');
 const hours = (h: number | null) => (h === null ? '–' : `${h}h`);
+// "17h to beat · 29h to 100%", skipping whichever is blank in the sheet
+const hoursLine = (beat: number | null, full: number | null) =>
+  [beat !== null && `${beat}h to beat`, full !== null && `${full}h to 100%`].filter(Boolean).join(' · ') || '–';
 
 // Same three-colour scale as the sheet's Priority column: red at 0, yellow at 5, green at 10.
 const scale = [[0xe6, 0x7c, 0x73], [0xff, 0xd6, 0x66], [0x57, 0xbb, 0x8a]];
@@ -35,7 +38,7 @@ function priorityColor(priority: number) {
             <summary>
               {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
               <span class="name">{i.name}</span>
-              <span class="count">{i.game?.achievements || `${hours(i.hoursBeat)} / ${hours(i.hours100)}`}</span>
+              <span class="count">{i.game?.achievements || hoursLine(i.hoursBeat, i.hours100)}</span>
               <span class="pct">{i.game && i.game.percent >= 0 ? `${i.game.percent}%` : ''}</span>
               <span class="date">{i.game?.lastPlayed}</span>
             </summary>
@@ -79,7 +82,7 @@ function priorityColor(priority: number) {
         <summary>
           {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
           <span class="name">{i.name}{i.playedBefore && <span class="tag">played before</span>}</span>
-          <span class="count">{hours(i.hoursBeat)} / {hours(i.hours100)}</span>
+          <span class="count">{hoursLine(i.hoursBeat, i.hours100)}</span>
           <span class="pct prio" style={`--c:${priorityColor(i.priority)}`} title={`priority ${i.priority}`}>{i.priority}</span>
           <span class="date"></span>
         </summary>
