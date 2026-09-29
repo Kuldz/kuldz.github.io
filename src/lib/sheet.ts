@@ -210,3 +210,24 @@ export async function getMasterpieces(): Promise<Masterpiece[]> {
     .filter((m) => m.name)
     .sort((a, b) => b.rating - a.rating);
 }
+
+export type InfoSection = { title: string; items: { label: string; value: string }[] };
+
+// The Info tab has no header row: a row with only its first cell filled starts a section,
+// and rows with a label and a value belong to the section above.
+export async function getInfo(): Promise<InfoSection[]> {
+  const rows = await fetchTab('Info');
+  const sections: InfoSection[] = [];
+  for (const row of rows) {
+    const label = (row[0] ?? '').trim();
+    const value = (row[1] ?? '').trim();
+    if (!label) continue;
+    if (!value) {
+      sections.push({ title: label, items: [] });
+    } else {
+      if (!sections.length) sections.push({ title: '', items: [] });
+      sections[sections.length - 1].items.push({ label, value });
+    }
+  }
+  return sections;
+}
