@@ -3,28 +3,44 @@ import Base from '../layouts/Base.astro';
 import { getMasterpieces } from '../lib/sheet';
 
 const masterpieces = await getMasterpieces();
+
+// Anything every game shares (same rating, same value in a column) is stated once at the top;
+// only values that differ between games are shown on the tiles.
+const labels = [...new Set(masterpieces.flatMap((m) => m.fields.map((f) => f.label)))];
+const valuesFor = (label: string) => masterpieces.map((m) => m.fields.find((f) => f.label === label)?.value ?? '');
+const common = labels.filter((l) => new Set(valuesFor(l)).size === 1 && valuesFor(l)[0]);
+const varying = labels.filter((l) => !common.includes(l));
+const ratings = new Set(masterpieces.map((m) => m.rating));
+const commonRating = ratings.size === 1 ? [...ratings][0] : null;
+
+const shared = [
+  commonRating !== null && `rating ${commonRating}`,
+  ...common.map((l) => `${l.toLowerCase()} ${valuesFor(l)[0]}`),
+].filter(Boolean);
 ---
 
 <Base title="Masterpieces – Kuldz">
   <h1>masterpieces</h1>
-  <p class="stats">{masterpieces.length} games</p>
+  <p class="stats">{[`${masterpieces.length} games`, ...shared].join(' · ')}</p>
 
   <ul class="grid">
     {masterpieces.map((m) => (
-      <li class="tile">
-        {m.icon ? <img src={m.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{m.name[0]}</span>}
-        <div class="info">
-          <h2>{m.name}</h2>
-          <dl class="facts">
-            {m.fields.map((f) => (
-              <div>
-                <dt>{f.label}</dt>
-                <dd>{f.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-        <span class="rating">{m.rating}<small>/10</small></span>
+      <li class="tile" title={m.name}>
+        {m.icon
+          ? <img src={m.icon} alt={m.name} loading="lazy" class="banner" />
+          : <span class="banner placeholder">{m.name}</span>}
+        <p class="name">{m.name}</p>
+        {(commonRating === null || varying.length > 0) && (
+          <p class="extra">
+            {[
+              commonRating === null && `${m.rating}/10`,
+              ...varying.map((l) => {
+                const value = m.fields.find((f) => f.label === l)?.value;
+                return value && `${l.toLowerCase()} ${value}`;
+              }),
+            ].filter(Boolean).join(' · ')}
+          </p>
+        )}
       </li>
     ))}
   </ul>
@@ -32,23 +48,16 @@ const masterpieces = await getMasterpieces();
 
 <style>
   .stats { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
-  .grid { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr)); }
-  .tile { background: var(--card); border-radius: 0.5rem; padding: 0.75rem; display: flex; align-items: center; gap: 0.75rem; }
-  .icon { width: 6.5rem; aspect-ratio: 460 / 215; flex: none; object-fit: cover; border-radius: 0.3rem; }
-  .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); }
-  .info { flex: 1; min-width: 0; }
-  h2 { margin: 0 0 0.4rem; font-size: 1rem; overflow-wrap: anywhere; }
-  .facts { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.3rem 0.75rem; }
-  .facts dt { color: var(--muted); font-size: 0.65rem; text-transform: lowercase; line-height: 1.2; }
-  .facts dd { margin: 0; font-size: 0.75rem; overflow-wrap: anywhere; line-height: 1.3; }
-  .rating { font-size: 1.5rem; font-weight: bold; color: #f5c542; }
-  .rating small { font-size: 0.75rem; color: var(--muted); font-weight: normal; }
+  .grid { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+  .tile { background: var(--card); border-radius: 0.5rem; padding: 0.5rem; }
+  .banner { display: block; width: 100%; aspect-ratio: 460 / 215; object-fit: cover; border-radius: 0.35rem; }
+  .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); text-align: center; padding: 0.5rem; }
+  .name { margin: 0.4rem 0.1rem 0; font-size: 0.8rem; font-weight: bold; overflow-wrap: anywhere; }
+  .extra { margin: 0.1rem 0.1rem 0; font-size: 0.7rem; color: var(--muted); }
 
   @media (max-width: 40rem) {
-    .grid { grid-template-columns: 1fr; gap: 0.5rem; }
-    .tile { padding: 0.5rem; gap: 0.6rem; }
-    .icon { width: 5rem; }
-    h2 { font-size: 0.95rem; margin-bottom: 0.3rem; }
-    .rating { font-size: 1.2rem; }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+    .tile { padding: 0.35rem; }
+    .name { font-size: 0.7rem; }
   }
 </style>
