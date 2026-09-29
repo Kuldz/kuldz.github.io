@@ -22,6 +22,12 @@ input[type='search'], select {
   align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; cursor: pointer; list-style: none;
 }
 .game summary::-webkit-details-marker { display: none; }
+/* Rows with no date to show (backlog "up next") drop the fifth column instead of leaving it empty. */
+@media (min-width: 641px) {
+  .game summary.no-date { grid-template-columns: 2.5rem 1fr auto 3.5rem; }
+  /* "Now playing" rows also carry a priority badge as a sixth column. */
+  .game summary.with-prio { grid-template-columns: 2.5rem 1fr auto 3.5rem 6.5rem 2.5rem; }
+}
 .game summary:hover { background: #1e222b; border-radius: 0.5rem; }
 .icon { width: 2.5rem; height: 2.5rem; object-fit: contain; border-radius: 0.25rem; }
 .placeholder { display: grid; place-items: center; background: #2a2f3a; color: var(--muted); }
@@ -36,8 +42,8 @@ input[type='search'], select {
 .count, .date { color: var(--muted); font-size: 0.85rem; text-align: right; white-space: nowrap; }
 .pct { font-size: 0.85rem; color: var(--muted); text-align: right; }
 .pct.done { color: #f5c542; font-weight: bold; }
-.pct.prio {
-  background: var(--c); color: #1a1d24; font-weight: bold; text-align: center;
+.prio {
+  background: var(--c); color: #1a1d24; font-weight: bold; font-size: 0.85rem; text-align: center;
   border-radius: 0.3rem; padding: 0.1rem 0; min-width: 2rem; justify-self: end;
 }
 .body { padding: 0 0.75rem 0.75rem 4rem; }
@@ -57,6 +63,10 @@ input[type='search'], select {
   .game summary .name { grid-area: name; }
   .game summary .pct { grid-area: pct; align-self: start; }
   .game summary .count { grid-area: count; text-align: left; font-size: 0.8rem; }
+  /* Now-playing rows: badge top-right, progress numbers on the second line. */
+  .game summary.with-prio { grid-template-areas: 'icon name prio' 'icon count pct'; }
+  .game summary.with-prio .prio { grid-area: prio; align-self: start; }
+  .game summary.with-prio .pct { align-self: end; }
   .date { display: none; }
   .body { padding-left: 0.75rem; }
 

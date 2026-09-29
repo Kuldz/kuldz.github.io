@@ -35,12 +35,13 @@ function priorityColor(priority: number) {
       <div class="list">
         {ongoing.map((i) => (
           <details class="game">
-            <summary>
+            <summary class="with-prio">
               {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
               <span class="name">{i.name}</span>
               <span class="count">{i.game?.achievements || hoursLine(i.hoursBeat, i.hours100)}</span>
               <span class="pct">{i.game && i.game.percent >= 0 ? `${i.game.percent}%` : ''}</span>
               <span class="date">{i.game?.lastPlayed}</span>
+              <span class="prio" style={`--c:${priorityColor(i.priority)}`} title={`priority ${i.priority}`}>{i.priority}</span>
             </summary>
             <div class="body">
               {i.why && <p class="notes">{i.why}</p>}
@@ -79,12 +80,11 @@ function priorityColor(priority: number) {
         data-full={i.hours100 ?? ''}
         data-before={i.playedBefore}
       >
-        <summary>
+        <summary class="no-date">
           {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
           <span class="name">{i.name}{i.playedBefore && <span class="tag">played before</span>}</span>
           <span class="count">{hoursLine(i.hoursBeat, i.hours100)}</span>
           <span class="pct prio" style={`--c:${priorityColor(i.priority)}`} title={`priority ${i.priority}`}>{i.priority}</span>
-          <span class="date"></span>
         </summary>
         <div class="body">
           {i.why && <p class="notes">{i.why}</p>}
