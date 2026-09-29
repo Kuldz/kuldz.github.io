@@ -89,8 +89,8 @@ const linkify = (text: string) =>
   const search = document.querySelector<HTMLInputElement>('#search')!;
   const sort = document.querySelector<HTMLSelectElement>('#sort')!;
   const group = document.querySelector<HTMLInputElement>('#group')!;
-  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
-  const platformChips = [...document.querySelectorAll<HTMLButtonElement>('[data-platform]')];
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('button[data-filter]')];
+  const platformChips = [...document.querySelectorAll<HTMLButtonElement>('button[data-platform]')];
   const count = document.querySelector<HTMLElement>('#count')!;
   let filter = 'all';
   let platform = 'all';

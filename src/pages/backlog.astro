@@ -89,7 +89,7 @@ const hours = (h: number | null) => (h === null ? '–' : `${h}h`);
   const rows = [...list.querySelectorAll<HTMLElement>('.game')];
   const search = document.querySelector<HTMLInputElement>('#search')!;
   const sort = document.querySelector<HTMLSelectElement>('#sort')!;
-  const chips = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+  const chips = [...document.querySelectorAll<HTMLButtonElement>('button[data-filter]')];
   const count = document.querySelector<HTMLElement>('#count')!;
   let filter = 'all';
 
