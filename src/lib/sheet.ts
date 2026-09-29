@@ -30,10 +30,7 @@ export type Masterpiece = {
   name: string;
   icon: string;
   rating: number;
-  gameplay: string;
-  story: string;
-  soundtrack: string;
-  achievements: string;
+  fields: { label: string; value: string }[]; // every other column, labelled with the sheet's header
 };
 
 export type BacklogItem = {
@@ -185,14 +182,11 @@ export async function getBacklog(): Promise<BacklogItem[]> {
 
 export async function getMasterpieces(): Promise<Masterpiece[]> {
   const [header = [], ...body] = await fetchTab('Masterpieces');
-  const idx = {
-    name: findCol(header, 'game'),
-    rating: findCol(header, 'rating'),
-    gameplay: findCol(header, 'gameplay'),
-    story: findCol(header, 'story'),
-    soundtrack: findCol(header, 'soundtrack'),
-    achievements: findCol(header, 'achievements'),
-  };
+  const idx = { name: findCol(header, 'game'), rating: findCol(header, 'rating') };
+  // Any other column (besides the thumbnail) is shown with its header as the label.
+  const factCols = header
+    .map((h, i) => ({ label: (h ?? '').trim(), i }))
+    .filter((c) => c.label && c.i !== idx.name && c.i !== idx.rating && !/^thumbnail/i.test(c.label));
 
   return body
     .map((row, i) => {
@@ -201,10 +195,7 @@ export async function getMasterpieces(): Promise<Masterpiece[]> {
         name: get(idx.name),
         icon: iconFor('Masterpieces', i + 2),
         rating: Number(get(idx.rating)) || 0,
-        gameplay: get(idx.gameplay),
-        story: get(idx.story),
-        soundtrack: get(idx.soundtrack),
-        achievements: get(idx.achievements),
+        fields: factCols.map((c) => ({ label: c.label, value: get(c.i) })).filter((f) => f.value),
       };
     })
     .filter((m) => m.name)
