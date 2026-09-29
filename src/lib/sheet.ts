@@ -74,7 +74,8 @@ function parseDate(s: string): number {
   return d && m && y ? Date.UTC(y, m - 1, d) : 0;
 }
 
-const norm = (name: string) => name.toLowerCase().replace(/[™®]/g, '').trim();
+// Match names across tabs ignoring case and punctuation ("Resident Evil 7: Biohazard" == "Resident Evil 7 Biohazard").
+const norm = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const findCol = (header: Row, prefix: string) =>
   header.findIndex((h) => h?.trim().toLowerCase().startsWith(prefix));
 
