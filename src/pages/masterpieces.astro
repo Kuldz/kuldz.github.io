@@ -13,15 +13,21 @@ const varying = labels.filter((l) => !common.includes(l));
 const ratings = new Set(masterpieces.map((m) => m.rating));
 const commonRating = ratings.size === 1 ? [...ratings][0] : null;
 
+// "addicting gameplay" -> "Addicting gameplay" (value first, your column name after)
+const phrase = (value: string, label: string) => {
+  const s = `${value} ${label}`.toLowerCase();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
+
 const shared = [
-  commonRating !== null && `rating ${commonRating}`,
-  ...common.map((l) => `${l.toLowerCase()} ${valuesFor(l)[0]}`),
+  commonRating !== null && `${commonRating}/10`,
+  ...common.map((l) => phrase(valuesFor(l)[0], l)),
 ].filter(Boolean);
 ---
 
 <Base title="Masterpieces – Kuldz">
-  <h1>masterpieces</h1>
-  <p class="stats">{[`${masterpieces.length} games`, ...shared].join(' · ')}</p>
+  <h1>Masterpieces</h1>
+  <p class="stats">{[`${masterpieces.length} games`, ...shared].map((s) => String(s).replace(/ /g, ' ')).join(' · ')}</p>
 
   <ul class="grid">
     {masterpieces.map((m) => (
@@ -36,7 +42,7 @@ const shared = [
               commonRating === null && `${m.rating}/10`,
               ...varying.map((l) => {
                 const value = m.fields.find((f) => f.label === l)?.value;
-                return value && `${l.toLowerCase()} ${value}`;
+                return value && phrase(value, l);
               }),
             ].filter(Boolean).join(' · ')}
           </p>

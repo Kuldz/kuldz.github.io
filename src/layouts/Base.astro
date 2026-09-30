@@ -9,19 +9,31 @@ const { title = 'Kuldz' } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <script is:inline>
+      // Easter egg: a 1 in 4747 chance per visit of seeing the site in Comic Sans ("?comic" forces it).
+      try {
+        var forced = new URLSearchParams(location.search).has('comic');
+        var roll = sessionStorage.getItem('comic');
+        if (forced || roll === null) {
+          roll = forced || Math.random() < 1 / 4747 ? '1' : '0';
+          sessionStorage.setItem('comic', roll);
+        }
+        if (roll === '1') document.documentElement.classList.add('comic');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <header>
-      <a class="brand" href="/">kuldz</a>
+      <a class="brand" href="/">Kuldz</a>
       <nav>
-        <a href="/games">games</a>
-        <a href="/backlog">backlog</a>
-        <a href="/masterpieces">masterpieces</a>
-        <a href="/setup">setup</a>
+        <a href="/games">Games</a>
+        <a href="/backlog">Backlog</a>
+        <a href="/masterpieces">Masterpieces</a>
+        <a href="/setup">Setup</a>
       </nav>
     </header>
     <main><slot /></main>
-    <footer>© Kuldz · <a href="https://docs.google.com/spreadsheets/d/1ICIoxSlUR9LZJMr_RaHG2F1pBWHZuN8obxa_XUttOIk" target="_blank" rel="noopener">sheet</a></footer>
+    <footer>© Kuldz · <a href="https://docs.google.com/spreadsheets/d/1ICIoxSlUR9LZJMr_RaHG2F1pBWHZuN8obxa_XUttOIk" target="_blank" rel="noopener">Sheet</a></footer>
   </body>
 </html>
 
@@ -49,6 +61,7 @@ const { title = 'Kuldz' } = Astro.props;
   header nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
   .brand { font-weight: bold; font-size: 1.25rem; }
   footer { color: var(--muted); font-size: 0.85rem; }
+  :root.comic body { font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Comic Neue', cursive; }
 
   @media (max-width: 40rem) {
     header nav { font-size: 0.9rem; gap: 0.25rem 0.85rem; }

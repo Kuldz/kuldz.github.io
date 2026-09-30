@@ -24,14 +24,14 @@ function priorityColor(priority: number) {
 ---
 
 <Base title="Backlog – Kuldz">
-  <h1>backlog</h1>
+  <h1>Backlog</h1>
   <p class="stats">
     {ongoing.length} ongoing · {queue.length} waiting · ~{fmt(totalBeat)}h to beat them all · ~{fmt(total100)}h to 100% them
   </p>
 
   {ongoing.length > 0 && (
     <>
-      <h2 class="section-heading">now playing</h2>
+      <h2 class="section-heading">Now playing</h2>
       <div class="list">
         {ongoing.map((i) => (
           <details class="game">
@@ -45,7 +45,7 @@ function priorityColor(priority: number) {
             </summary>
             <div class="body">
               {i.why && <p class="notes">{i.why}</p>}
-              <p class="review">to beat: {hours(i.hoursBeat)} · to 100%: {hours(i.hours100)}</p>
+              <p class="review">To beat: {hours(i.hoursBeat)} · To 100%: {hours(i.hours100)}</p>
             </div>
           </details>
         ))}
@@ -53,19 +53,19 @@ function priorityColor(priority: number) {
     </>
   )}
 
-  <h2 class="section-heading">up next</h2>
+  <h2 class="section-heading">Up next</h2>
   <div class="controls">
-    <input id="search" type="search" placeholder="search…" aria-label="Search backlog" />
+    <input id="search" type="search" placeholder="Search…" aria-label="Search backlog" />
     <select id="sort" aria-label="Sort by">
-      <option value="priority">priority</option>
-      <option value="beat">shortest to beat</option>
-      <option value="full">shortest to 100%</option>
-      <option value="name">name</option>
+      <option value="priority">Priority</option>
+      <option value="beat">Shortest to beat</option>
+      <option value="full">Shortest to 100%</option>
+      <option value="name">Name</option>
     </select>
     <div class="chips" role="group" aria-label="Filter">
-      <button type="button" data-filter="all" aria-pressed="true">all</button>
-      <button type="button" data-filter="new" aria-pressed="false">new to me</button>
-      <button type="button" data-filter="before" aria-pressed="false">played before</button>
+      <button type="button" data-filter="all" aria-pressed="true">All</button>
+      <button type="button" data-filter="new" aria-pressed="false">New to me</button>
+      <button type="button" data-filter="before" aria-pressed="false">Played before</button>
     </div>
   </div>
   <p id="count" class="stats" aria-live="polite"></p>
@@ -82,13 +82,13 @@ function priorityColor(priority: number) {
       >
         <summary class="no-date">
           {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
-          <span class="name">{i.name}{i.playedBefore && <span class="tag">played before</span>}</span>
+          <span class="name">{i.name}{i.playedBefore && <span class="tag">Played before</span>}</span>
           <span class="count">{hoursLine(i.hoursBeat, i.hours100)}</span>
           <span class="pct prio" style={`--c:${priorityColor(i.priority)}`} title={`priority ${i.priority}`}>{i.priority}</span>
         </summary>
         <div class="body">
           {i.why && <p class="notes">{i.why}</p>}
-          {i.game && <p class="review">already in games: {i.game.achievements || 'no achievements'} · last played {i.game.lastPlayed}</p>}
+          {i.game && <p class="review">Already in games: {i.game.achievements || 'no achievements'} · Last played {i.game.lastPlayed}</p>}
         </div>
       </details>
     ))}
@@ -121,7 +121,7 @@ function priorityColor(priority: number) {
       .filter((r) => filter === 'all' || (filter === 'before') === (r.dataset.before === 'true'))
       .sort(comparators[sort.value]);
     list.replaceChildren(...visible);
-    count.textContent = `showing ${visible.length} of ${rows.length}`;
+    count.textContent = `Showing ${visible.length} of ${rows.length}`;
   }
 
   search.addEventListener('input', render);
