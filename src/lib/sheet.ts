@@ -222,3 +222,25 @@ export async function getInfo(): Promise<InfoSection[]> {
   }
   return sections;
 }
+
+// The sheet's own column headers, so the site can label things in the sheet's words.
+export async function getLabels() {
+  const [games, backlog] = await Promise.all([fetchTab('Games'), fetchTab('Backlog')]);
+  const pick = (header: Row = [], prefix: string, fallback: string) => {
+    const i = findCol(header, prefix);
+    return (i >= 0 && header[i]?.trim()) || fallback;
+  };
+  return {
+    achievements: pick(games[0], 'achievements', 'Achievements'),
+    notes: pick(games[0], 'additional', 'Notes'),
+    lastPlayed: pick(games[0], 'last played', 'Last played'),
+    review: pick(games[0], 'review', 'Review'),
+    why: pick(backlog[0], 'why', 'Why'),
+  };
+}
+
+// "Last Played / Updated" -> "Last played" (short form for narrow column headings)
+export const shortLabel = (s: string) => {
+  const t = s.split(' / ')[0].trim().toLowerCase();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+};

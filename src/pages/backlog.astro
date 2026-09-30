@@ -1,9 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getBacklog } from '../lib/sheet';
+import { getBacklog, getLabels, shortLabel } from '../lib/sheet';
 import '../styles/list.css';
 
 const items = await getBacklog();
+const labels = await getLabels();
 const ongoing = items.filter((i) => i.ongoing);
 const queue = items.filter((i) => !i.ongoing);
 const totalBeat = queue.reduce((sum, i) => sum + (i.hoursBeat ?? 0), 0);
@@ -32,19 +33,35 @@ function priorityColor(priority: number) {
   {ongoing.length > 0 && (
     <>
       <h2 class="section-heading">Now playing</h2>
+      <div class="list-head with-prio" aria-hidden="true">
+        <span></span><span></span>
+        <span>{shortLabel(labels.achievements)}</span>
+        <span>Completion</span>
+        <span>{shortLabel(labels.lastPlayed)}</span>
+        <span>Priority</span>
+      </div>
       <div class="list">
         {ongoing.map((i) => (
           <details class="game">
             <summary class="with-prio">
               {i.icon ? <img src={i.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{i.name[0]}</span>}
               <span class="name">{i.name}</span>
-              <span class="count">{i.game?.achievements || hoursLine(i.hoursBeat, i.hours100)}</span>
+              <span class="count">
+                {i.game?.achievements
+                  ? <>{i.game.achievements}<span class="unit"> {labels.achievements.toLowerCase()}</span></>
+                  : hoursLine(i.hoursBeat, i.hours100)}
+              </span>
               <span class="pct">{i.game && i.game.percent >= 0 ? `${i.game.percent}%` : ''}</span>
               <span class="date">{i.game?.lastPlayed}</span>
               <span class="prio" style={`--c:${priorityColor(i.priority)}`} title={`priority ${i.priority}`}>{i.priority}</span>
             </summary>
             <div class="body">
-              {i.why && <p class="notes">{i.why}</p>}
+              {i.why && (
+                <>
+                  <p class="label">{labels.why}</p>
+                  <p class="notes">{i.why}</p>
+                </>
+              )}
               <p class="review">To beat: {hours(i.hoursBeat)} · To 100%: {hours(i.hours100)}</p>
             </div>
           </details>
@@ -70,6 +87,10 @@ function priorityColor(priority: number) {
   </div>
   <p id="count" class="stats" aria-live="polite"></p>
 
+  <div class="list-head no-date" aria-hidden="true">
+    <span></span><span></span><span></span>
+    <span>Priority</span>
+  </div>
   <div id="queue" class="list">
     {queue.map((i) => (
       <details
@@ -87,7 +108,12 @@ function priorityColor(priority: number) {
           <span class="pct prio" style={`--c:${priorityColor(i.priority)}`} title={`priority ${i.priority}`}>{i.priority}</span>
         </summary>
         <div class="body">
-          {i.why && <p class="notes">{i.why}</p>}
+          {i.why && (
+            <>
+              <p class="label">{labels.why}</p>
+              <p class="notes">{i.why}</p>
+            </>
+          )}
           {i.game && <p class="review">Already in games: {i.game.achievements || 'no achievements'} · Last played {i.game.lastPlayed}</p>}
         </div>
       </details>

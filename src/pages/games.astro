@@ -1,9 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getGames } from '../lib/sheet';
+import { getGames, getLabels, shortLabel } from '../lib/sheet';
 import '../styles/list.css';
 
 const games = await getGames();
+const labels = await getLabels();
 const completed = games.filter((g) => g.complete).length;
 const achievements = games.reduce((sum, g) => sum + g.earned, 0);
 const everything = games.filter((g) => g.everything).length;
@@ -50,6 +51,12 @@ const linkify = (text: string) =>
   </div>
   <p id="count" class="stats" aria-live="polite"></p>
 
+  <div class="list-head" aria-hidden="true">
+    <span></span><span></span>
+    <span>{shortLabel(labels.achievements)}</span>
+    <span>Completion</span>
+    <span>{shortLabel(labels.lastPlayed)}</span>
+  </div>
   <div id="games" class="list">
     {games.map((g) => (
       <details
@@ -67,18 +74,26 @@ const linkify = (text: string) =>
         <summary>
           {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{g.name[0]}</span>}
           <span class="name">{g.name}{g.ongoing && <span class="tag">Ongoing</span>}{g.platform === 'playstation' && <span class="tag ps">PS</span>}{g.platinum && <span class="tag plat">Platinum</span>}{g.everything && <span class="tag plat">Everything</span>}</span>
-          <span class="count">{g.achievements || '–'}</span>
+          <span class="count">{g.achievements || '–'}{g.achievements && <span class="unit"> {labels.achievements.toLowerCase()}</span>}</span>
           <span class:list={['pct', { done: g.complete }]}>{g.complete ? '100%' : g.percent >= 0 ? `${g.percent}%` : ''}</span>
           <span class="date">{g.lastPlayed}</span>
         </summary>
         <div class="body">
-          {g.franchise && <p class="franchise">{g.franchise}</p>}
+          {g.franchise && <p class="franchise"><span>Franchise</span> {g.franchise}</p>}
           {g.notes && (
-            <p class="notes">
-              {linkify(g.notes).map((s) => (s.isUrl ? <a href={s.part} rel="noopener">{s.part}</a> : s.part))}
-            </p>
+            <>
+              <p class="label">{labels.notes}</p>
+              <p class="notes">
+                {linkify(g.notes).map((s) => (s.isUrl ? <a href={s.part} rel="noopener">{s.part}</a> : s.part))}
+              </p>
+            </>
           )}
-          {g.review && <p class="review">{g.review}</p>}
+          {g.review && (
+            <>
+              <p class="label">{labels.review}</p>
+              <p class="review">{g.review}</p>
+            </>
+          )}
         </div>
       </details>
     ))}

@@ -11,15 +11,17 @@ const { title = 'Kuldz' } = Astro.props;
     <title>{title}</title>
     <script is:inline>
       // Easter egg: a 1 in 4747 chance per visit of seeing the site in Comic Sans ("?comic" forces it).
+      // "?comic" only affects that one page view and is never remembered; only the random roll is.
+      var on = new URLSearchParams(location.search).has('comic');
       try {
-        var forced = new URLSearchParams(location.search).has('comic');
         var roll = sessionStorage.getItem('comic');
-        if (forced || roll === null) {
-          roll = forced || Math.random() < 1 / 4747 ? '1' : '0';
+        if (roll === null) {
+          roll = Math.random() < 1 / 4747 ? '1' : '0';
           sessionStorage.setItem('comic', roll);
         }
-        if (roll === '1') document.documentElement.classList.add('comic');
+        on = on || roll === '1';
       } catch (e) {}
+      if (on) document.documentElement.classList.add('comic');
     </script>
   </head>
   <body>
