@@ -4,10 +4,22 @@ import Base from '../layouts/Base.astro';
 
 <Base title="Kuldz">
   <h1>Kuldz</h1>
-  <ul>
-    <li><a href="/games">Games</a></li>
-    <li><a href="/backlog">Backlog</a></li>
-    <li><a href="/masterpieces">Masterpieces</a></li>
-    <li><a href="/setup">Setup</a></li>
-  </ul>
+
+  <section>
+    <h2>Achievements</h2>
+    <p class="aside">Real life ones? No no no... video game achievements of course!</p>
+    <ul>
+      <li><a href="/games">Games</a></li>
+      <li><a href="/backlog">Backlog</a></li>
+      <li><a href="/masterpieces">Masterpieces</a></li>
+      <li><a href="/setup">Setup</a></li>
+    </ul>
+  </section>
 </Base>
+
+<style>
+  section { margin-top: 2rem; }
+  h2 { font-size: 1.1rem; color: var(--accent); margin: 0 0 0.25rem; }
+  .aside { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.75rem; }
+  ul { margin: 0; padding-left: 1.25rem; }
+</style>
