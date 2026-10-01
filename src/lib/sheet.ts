@@ -65,6 +65,17 @@ function fetchTab(tab: string): Promise<Row[]> {
   return tabs.get(tab)!;
 }
 
+// Google silently returns the first tab (Games) for a tab name that doesn't exist, so a response whose
+// header matches Games means "not found" and the next name is tried.
+async function fetchAnyTab(names: string[]): Promise<Row[]> {
+  const gamesHeader = JSON.stringify((await fetchTab('Games'))[0] ?? []);
+  for (const name of names) {
+    const rows = await fetchTab(name);
+    if (JSON.stringify(rows[0] ?? []) !== gamesHeader) return rows;
+  }
+  throw new Error(`None of these tabs exist in the sheet: ${names.join(', ')}`);
+}
+
 // "28.09.2026" -> timestamp
 function parseDate(s: string): number {
   const [d, m, y] = s.split('.').map(Number);
@@ -207,7 +218,7 @@ export type InfoSection = { title: string; items: { label: string; value: string
 // The Info tab has no header row: a row with only its first cell filled starts a section,
 // and rows with a label and a value belong to the section above.
 export async function getInfo(): Promise<InfoSection[]> {
-  const rows = await fetchTab('Info');
+  const rows = await fetchAnyTab(['Setup', 'Info']); // the tab may be called either
   const sections: InfoSection[] = [];
   for (const row of rows) {
     const label = (row[0] ?? '').trim();
