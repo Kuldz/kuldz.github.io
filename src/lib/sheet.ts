@@ -45,8 +45,9 @@ export type BacklogItem = {
   game?: Game; // matching row from the Games tab, for progress
 };
 
-const iconFor = (tab: string, sheetRow: number): string =>
-  (covers as Record<string, Record<string, string>>)[tab]?.[sheetRow] ?? '';
+// Icons are keyed by game name, not row, so re-sorting the sheet can't mix them up (see scripts/fetch-covers.mjs).
+const iconFor = (tab: string, gameName: string): string =>
+  (covers as Record<string, Record<string, string>>)[tab]?.[norm(gameName)] ?? '';
 
 // The sheet is shared publicly, so Google serves each tab as CSV at build time.
 const tabs = new Map<string, Promise<Row[]>>();
@@ -113,7 +114,7 @@ function loadGames(): Promise<Game[]> {
     };
 
     return body
-      .map((row, i) => {
+      .map((row) => {
         const get = (n: number) => (n >= 0 ? (row[n] ?? '').trim() : '');
         // Formats seen: "29/80", "10/10 (all)", "30/30 (Platinum)", "23/59 Trophies", "1718/?", "-", "Platinum Trophy"
         const achievements = get(idx.ach);
@@ -123,7 +124,7 @@ function loadGames(): Promise<Game[]> {
         const lastPlayed = get(idx.last);
         return {
           name: get(idx.name),
-          icon: iconFor('Games', i + 2), // i=0 is sheet row 2 (row 1 is the header)
+          icon: iconFor('Games', get(idx.name)),
           achievements: achievements === '-' ? '' : achievements,
           earned,
           total,
@@ -160,12 +161,12 @@ function loadBacklog() {
     const hours = (s: string) => (s && !Number.isNaN(Number(s)) ? Number(s) : null);
 
     return body
-      .map((row, i) => {
+      .map((row) => {
         const get = (n: number) => (n >= 0 ? (row[n] ?? '').trim() : '');
         const why = get(idx.why);
         return {
           name: get(idx.name),
-          icon: iconFor('Backlog', i + 2),
+          icon: iconFor('Backlog', get(idx.name)),
           why: why.replace(/^ongoing:\s*/i, ''),
           ongoing: /^ongoing\b/i.test(why),
           playedBefore: /^played before\b/i.test(why),
@@ -200,11 +201,11 @@ export async function getMasterpieces(): Promise<Masterpiece[]> {
     .filter((c) => c.label && c.i !== idx.name && c.i !== idx.rating && !/^thumbnail/i.test(c.label));
 
   return body
-    .map((row, i) => {
+    .map((row) => {
       const get = (n: number) => (n >= 0 ? (row[n] ?? '').trim() : '');
       return {
         name: get(idx.name),
-        icon: iconFor('Masterpieces', i + 2),
+        icon: iconFor('Masterpieces', get(idx.name)),
         rating: Number(get(idx.rating)) || 0,
         fields: factCols.map((c) => ({ label: c.label, value: get(c.i) })).filter((f) => f.value),
       };

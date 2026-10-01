@@ -1,6 +1,8 @@
 // Pulls the in-cell icons out of the sheet's XLSX export (the Sheets API doesn't expose them).
 // Writes public/covers/<tab>-<sheet row>.<ext> and src/data/covers.json:
-//   { "<tab name>": { "<sheet row>": "/covers/<file>" } }
+//   { "<tab name>": { "<normalized game name>": "/covers/<file>" } }
+// Icons are keyed by the game name read from the same XLSX (column B), not by row number, so
+// re-sorting or editing the sheet between this download and the CSV download can't mix icons up.
 // Never fails the build: on any error the site just renders placeholders.
 import { unzipSync, strFromU8 } from 'fflate';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -8,6 +10,17 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 const SHEET_ID = '1ICIoxSlUR9LZJMr_RaHG2F1pBWHZuN8obxa_XUttOIk';
 const OUT_DIR = 'public/covers';
 const MAP_FILE = 'src/data/covers.json';
+
+// Must match `norm` in src/lib/sheet.ts
+const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const decode = (s) =>
+  s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&amp;/g, '&');
 
 const covers = {};
 
@@ -17,6 +30,11 @@ try {
   const files = unzipSync(new Uint8Array(await res.arrayBuffer()));
   const text = (path) => strFromU8(files[path]);
   const attr = (tag, name) => new RegExp(`${name}="([^"]*)"`).exec(tag)?.[1];
+
+  // Cell text lives in the shared strings table
+  const sharedStrings = [...text('xl/sharedStrings.xml').matchAll(/<si>(.*?)<\/si>/gs)].map((m) =>
+    decode([...m[1].matchAll(/<t[^>]*>(.*?)<\/t>/gs)].map((t) => t[1]).join('')),
+  );
 
   // tab name -> worksheet file, via workbook.xml + its rels
   const workbookRels = Object.fromEntries(
@@ -40,6 +58,14 @@ try {
     const drawingFile = /drawings\/(drawing\d+\.xml)/.exec(text(relsPath))?.[1];
     if (!drawingFile) continue;
 
+    // Game name per row: column B of this tab
+    const nameByRow = {};
+    for (const c of text(`xl/worksheets/${sheetFile}`).matchAll(/<c r="B(\d+)"([^>]*?)(?:\/>|>(.*?)<\/c>)/gs)) {
+      const v = /<v>(.*?)<\/v>/s.exec(c[3] ?? '')?.[1];
+      if (v === undefined) continue;
+      nameByRow[Number(c[1])] = /t="s"/.test(c[2]) ? sharedStrings[Number(v)] : decode(v);
+    }
+
     const drawing = text(`xl/drawings/${drawingFile}`);
     const drawingRels = text(`xl/drawings/_rels/${drawingFile}.rels`);
     const media = Object.fromEntries(
@@ -55,10 +81,11 @@ try {
       const col = Number(/<xdr:col>(\d+)</.exec(a)?.[1]);
       const row = Number(/<xdr:row>(\d+)</.exec(a)?.[1]); // 0-based
       const image = media[/r:embed="([^"]+)"/.exec(a)?.[1]];
-      if (col !== 0 || Number.isNaN(row) || !image || !files[`xl/media/${image}`]) continue;
-      const out = `${slug}-${row + 1}.${image.split('.').pop()}`; // 1-based sheet row
+      const gameName = nameByRow[row + 1];
+      if (col !== 0 || Number.isNaN(row) || !image || !gameName || !files[`xl/media/${image}`]) continue;
+      const out = `${slug}-${row + 1}.${image.split('.').pop()}`;
       writeFileSync(`${OUT_DIR}/${out}`, files[`xl/media/${image}`]);
-      covers[name][row + 1] = `/covers/${out}`;
+      covers[name][norm(gameName)] = `/covers/${out}`;
     }
   }
   console.log(
