@@ -49,6 +49,7 @@ const { title = 'Kuldz' } = Astro.props;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
+  html { scrollbar-gutter: stable; } /* short pages keep the same width as long ones, so content doesn't shift sideways */
   body {
     margin: 0;
     background: var(--bg);
