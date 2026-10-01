@@ -34,7 +34,7 @@ function priorityColor(priority: number) {
     <>
       <h2 class="section-heading">Now playing</h2>
       <div class="list-head with-prio" aria-hidden="true">
-        <span></span><span></span>
+        <span class="left">{shortLabel(labels.game)}</span>
         <span>{shortLabel(labels.achievements)}</span>
         <span>Completion</span>
         <span>{shortLabel(labels.lastPlayed)}</span>
@@ -88,7 +88,7 @@ function priorityColor(priority: number) {
   <p id="count" class="stats" aria-live="polite"></p>
 
   <div class="list-head no-date" aria-hidden="true">
-    <span></span><span></span><span></span>
+    <span class="left">{shortLabel(labels.game)}</span><span></span>
     <span>Priority</span>
   </div>
   <div id="queue" class="list">

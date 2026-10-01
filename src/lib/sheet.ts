@@ -242,6 +242,7 @@ export async function getLabels() {
     return (i >= 0 && header[i]?.trim()) || fallback;
   };
   return {
+    game: pick(games[0], 'game', 'Game'),
     achievements: pick(games[0], 'achievements', 'Achievements'),
     notes: pick(games[0], 'additional', 'Notes'),
     lastPlayed: pick(games[0], 'last played', 'Last played'),

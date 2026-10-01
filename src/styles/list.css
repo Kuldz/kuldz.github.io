@@ -61,6 +61,7 @@ input[type='search'], select {
   padding: 0 0.75rem; margin-top: 1rem; color: var(--muted); font-size: 0.68rem; text-align: right;
 }
 .list-head span { white-space: nowrap; }
+.list-head .left { grid-column: 1 / span 2; text-align: left; }
 .list-head.no-date { grid-template-columns: 2.5rem 1fr auto 4.5rem; }
 .list-head.with-prio { grid-template-columns: 2.5rem 1fr auto 4.5rem 6.5rem 3.75rem; }
 .list-head + .list { margin-top: 0.25rem; }
