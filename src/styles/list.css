@@ -48,12 +48,13 @@ input[type='search'], select {
 }
 .body { padding: 0 0.75rem 0.75rem 4rem; }
 .body p { margin: 0.4rem 0 0; overflow-wrap: anywhere; }
-.franchise { color: var(--accent); font-size: 0.8rem; }
-.notes { font-size: 0.9rem; }
+.notes { font-size: 0.9rem; white-space: pre-line; }
 .review { font-size: 0.85rem; color: var(--muted); white-space: pre-line; }
+/* Games: thoughts sit a step quieter than the accomplishments above them. */
+.thoughts { font-size: 0.85rem; color: #c9ced6; white-space: pre-line; }
 .body .label { font-size: 0.7rem; color: var(--muted); margin-top: 0.75rem; }
+.body .label:first-child { margin-top: 0.25rem; }
 .body .label + p { margin-top: 0.15rem; }
-.franchise span { color: var(--muted); }
 
 /* Column labels above a list. Same columns and spacing as the rows; hidden on phones, which label inline. */
 .list-head {
