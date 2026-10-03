@@ -10,8 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "prebuild": "node scripts/fetch-covers.mjs",
-    "predev": "node scripts/fetch-covers.mjs"
+    "prebuild": "node scripts/fetch-covers.mjs && node scripts/fetch-pokedex.mjs",
+    "predev": "node scripts/fetch-covers.mjs && node scripts/fetch-pokedex.mjs"
   },
   "dependencies": {
     "astro": "^7.3.5",

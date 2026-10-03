@@ -1,0 +1,112 @@
+---
+import Base from '../layouts/Base.astro';
+import pokedex from '../data/pokedex.json'; // written by scripts/fetch-pokedex.mjs
+
+// Ring colours like Poke Genie's Pokédex: one colour per type, two-type Pokémon get both.
+const typeColor: Record<string, string> = {
+  normal: '#a8a77a', fire: '#ee8130', water: '#6390f0', electric: '#f7d02c', grass: '#7ac74c', ice: '#96d9d6',
+  fighting: '#c22e28', poison: '#a33ea1', ground: '#e2bf65', flying: '#a98ff3', psychic: '#f95587', bug: '#a6b91a',
+  rock: '#b6a136', ghost: '#735797', dragon: '#6f35fc', dark: '#705746', steel: '#b7b7ce', fairy: '#d685ad',
+};
+const ring = (types: string[]) => {
+  const [a, b = a] = types.map((t) => typeColor[t] ?? '#8b93a1');
+  return a ? `linear-gradient(${a}, ${b})` : '#2a2f3a';
+};
+
+// "Galarian Articuno" -> "Galarian", "Zacian (Crowned Sword)" -> "Crowned Sword", "Articuno" -> ""
+const formOf = (label: string, name: string) => label.replace(name, '').replace(/[()]/g, '').trim();
+
+const owned =pokedex.filter((s) => s.entries.length).length;
+const released = pokedex.filter((s) => s.released).length;
+---
+
+<Base title="Pokédex – Kuldz" wide>
+  <h1>Pokédex</h1>
+  <p class="intro">
+    WIP and updated once per whenever. Based off of the images that I have set in Poke Genie, which are not very organised
+    yet due to the fact that I only recently bought Scan Pro (and I haven't had motivation to mess around with the app). I
+    should actually have almost the entire normal Pokédex done in game. Otherwise the goal is to get the coolest possible
+    pictures here, whether it's combos like costume + background or lucky + shiny.
+  </p>
+  <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
+
+  <ul class="dex">
+    {pokedex.map((s) => {
+      const first = s.entries[0];
+      return (
+        <li class:list={{ missing: !first, unreleased: !s.released }}>
+          {s.entries.length > 1 ? (
+            // Several forms (e.g. Mega): clicking the circle cycles through them.
+            <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ file: e.file, form: formOf(e.label, s.name) || 'Normal', ring: ring(e.types) })))} aria-label={`${first.label}, show other forms`}>
+              <img src={first.file} alt="" loading="lazy" />
+              <span class="forms" aria-hidden="true">{formOf(first.label, s.name) || 'Normal'}</span>
+            </button>
+          ) : (
+            <span class="ring" style={`--ring:${s.released ? ring(first?.types ?? s.types) : '#2a2f3a'}`}>
+              {first ? <img src={first.file} alt="" loading="lazy" /> : <span class="unknown" aria-hidden="true">{s.released ? '?' : ''}</span>}
+              {first && formOf(first.label, s.name) && <span class="forms single">{formOf(first.label, s.name)}</span>}
+            </span>
+          )}
+          <span class="name">{s.name}</span>
+          <span class="num">#{s.number}</span>
+        </li>
+      );
+    })}
+  </ul>
+</Base>
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>('button.ring')) {
+    const entries: { file: string; form: string; ring: string }[] = JSON.parse(button.dataset.entries!);
+    const img = button.querySelector('img')!;
+    const badge = button.querySelector('.forms')!;
+    let i = 0;
+    button.addEventListener('click', () => {
+      i = (i + 1) % entries.length;
+      img.src = entries[i].file;
+      button.style.setProperty('--ring', entries[i].ring);
+      badge.textContent = entries[i].form;
+    });
+  }
+</script>
+
+<style>
+  .stats { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
+  .intro { max-width: 60rem; font-size: 0.9rem; margin: 0.25rem 0 0.75rem; }
+  .dex {
+    list-style: none; padding: 0; margin: 1.25rem 0 0;
+    display: grid; gap: 1.5rem 1rem;
+    /* Fixed column counts chosen so the 1025 entries don't end on a lonely last row:
+       5 columns divide evenly, 7 leaves 3, 9 leaves 8 (and phones: 3 leaves 2). */
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  @media (min-width: 64rem) { .dex { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+  @media (min-width: 84rem) { .dex { grid-template-columns: repeat(9, minmax(0, 1fr)); } }
+  li { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .ring {
+    position: relative; width: 100%; max-width: 8.5rem; aspect-ratio: 1; border-radius: 50%; padding: 4px; border: 0;
+    background: var(--ring);
+  }
+  button.ring { cursor: pointer; }
+  .ring img, .unknown { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: var(--card); }
+  .unknown { display: grid; place-items: center; font-size: 2.25rem; font-weight: bold; color: var(--muted); }
+  .forms {
+    position: absolute; left: 50%; bottom: -0.35rem; transform: translateX(-50%); white-space: nowrap;
+    font-size: 0.65rem; font-weight: bold; line-height: 1.3;
+    background: var(--accent); color: var(--bg); border-radius: 999px; padding: 0.1rem 0.45rem;
+  }
+  /* A lone form (e.g. only a Galarian one) isn't clickable, so its badge is quieter. */
+  .forms.single { background: #2a2f3a; color: var(--fg); }
+  .ring { position: relative; }
+  .name { margin-top: 0.5rem; font-size: 0.95rem; font-weight: bold; overflow-wrap: anywhere; }
+  .num { color: var(--muted); font-size: 0.75rem; }
+  .missing .name { color: var(--muted); font-weight: normal; }
+  .unreleased .unknown { background: #000; }
+  .unreleased .name, .unreleased .num { color: #4a505c; }
+
+  @media (max-width: 40rem) {
+    .dex { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 0.5rem; }
+    .ring { width: 100%; max-width: 6rem; }
+    .name { font-size: 0.75rem; }
+  }
+</style>
