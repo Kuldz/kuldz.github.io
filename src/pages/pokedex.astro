@@ -121,7 +121,10 @@ const released = pokedex.filter((s) => s.released).length;
     position: relative; width: 100%; max-width: 8.5rem; aspect-ratio: 1; border-radius: var(--r); padding: 4px; border: 0;
     background: var(--ring);
   }
-  button.ring { cursor: pointer; }
+  /* No blue tap flash on phones; keyboard focus still gets a rounded outline. */
+  button.ring { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  button.ring:focus { outline: none; }
+  button.ring:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   /* Inner corners = outer corners minus the 4px border, so the curves sit evenly inside each other.
      No background on the pictures: it would show as a dark sliver along the curved edge. */
   .ring img, .unknown { display: block; width: 100%; height: 100%; border-radius: calc(var(--r) - 4px); object-fit: cover; }
