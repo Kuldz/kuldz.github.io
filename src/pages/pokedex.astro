@@ -43,8 +43,9 @@ const released = pokedex.filter((s) => s.released).length;
         <li class:list={{ missing: !first, unreleased: !s.released }}>
           {s.entries.length > 1 ? (
             // Several forms (e.g. Mega): clicking the circle cycles through them.
-            <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ file: e.file, form: formOf(e.label, s.name) || 'Normal', ring: ring(e.types) })))} aria-label={`${first.label}, show other forms`}>
-              <img src={first.file} alt="" loading="lazy" />
+            // All forms' pictures are stacked in the circle and only the current one is shown, so switching is instant.
+            <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ form: formOf(e.label, s.name) || 'Normal', ring: ring(e.types) })))} aria-label={`${first.label}, show other forms`}>
+              {s.entries.map((e, i) => <img src={e.file} alt="" loading="lazy" class:list={{ hidden: i > 0 }} />)}
               <span class="forms" aria-hidden="true">{formOf(first.label, s.name) || 'Normal'}</span>
             </button>
           ) : (
@@ -63,15 +64,14 @@ const released = pokedex.filter((s) => s.released).length;
 
 <script>
   for (const button of document.querySelectorAll<HTMLButtonElement>('button.ring')) {
-    const entries: { file: string; form: string; ring: string }[] = JSON.parse(button.dataset.entries!);
-    const img = button.querySelector('img')!;
+    const entries: { form: string; ring: string }[] = JSON.parse(button.dataset.entries!);
+    const imgs = [...button.querySelectorAll('img')];
     const badge = button.querySelector('.forms')!;
-    // Load the other forms' pictures ahead of time so switching is instant.
-    for (const e of entries.slice(1)) new Image().src = e.file;
     let i = 0;
     button.addEventListener('click', () => {
+      imgs[i].classList.add('hidden');
       i = (i + 1) % entries.length;
-      img.src = entries[i].file;
+      imgs[i].classList.remove('hidden');
       button.style.setProperty('--ring', entries[i].ring);
       badge.textContent = entries[i].form;
     });
@@ -101,6 +101,9 @@ const released = pokedex.filter((s) => s.released).length;
   }
   button.ring { cursor: pointer; }
   .ring img, .unknown { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: var(--card); }
+  /* Stacked form pictures: hidden ones still load and stay decoded, so showing one is instant. */
+  button.ring img { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); }
+  button.ring img.hidden { visibility: hidden; }
   .unknown { display: grid; place-items: center; font-size: 2.25rem; font-weight: bold; color: var(--muted); }
   .forms {
     position: absolute; left: 50%; bottom: -0.35rem; transform: translateX(-50%); white-space: nowrap;
