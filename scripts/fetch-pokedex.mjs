@@ -95,12 +95,17 @@ try {
     // "3.jpg", "3_Mega.jpg", "19_Alola.jpg"
     const m = /pokedex\/((\d+)(?:_([^/]+))?)\.jpg$/i.exec(path);
     if (!m) continue;
-    const [, file, num, form = ''] = m;
+    const [, file, num, rawForm = ''] = m;
     const species = dex[Number(num) - 1];
     if (!species) continue;
     writeFileSync(`${OUT_DIR}/${file}.jpg`, data);
+    // Some forms come with the species name glued on ("Deoxysattack"): drop it and capitalise the rest ("Attack").
+    const prefix = species.name.toLowerCase().replace(/[^a-z]/g, '');
+    let form = rawForm.toLowerCase().startsWith(prefix) ? rawForm.slice(prefix.length) : rawForm;
+    form = form.charAt(0).toUpperCase() + form.slice(1);
     const f = FORMS[form];
-    const formId = f && idOf[`${identifierOf[num]?.split('-')[0]}-${f.api}`];
+    // Types: PokeAPI's form ("deoxys-attack", "rattata-alola"); falls back to the species' types if there's no match.
+    const formId = form && idOf[`${identifierOf[num]?.split('-')[0]}-${f ? f.api : form.toLowerCase()}`];
     species.entries.push({
       file: `/pokedex/${file}.jpg`,
       form,
