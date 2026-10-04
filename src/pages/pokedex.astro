@@ -34,6 +34,20 @@ const released = pokedex.filter((s) => s.released).length;
     should actually have almost the entire normal Pokédex done in game. Otherwise the goal is to get the coolest possible
     pictures here, whether it's combos like costume + background or lucky + shiny. The game in question is Pokémon GO.
   </p>
+  <details class="legend">
+    <summary>Legend</summary>
+    <ul>
+      <li>Pokémon is the wrong colour and has sparkles around it <b>Shiny</b></li>
+      <li>Blinding yellow glow in the background <b>Lucky</b></li>
+      <li>Bigger than its own evolution / smaller than its pre-evolution <b>XXL / XXS</b></li>
+      <li>Reddish aura and clouds above its head <b>Dynamax</b></li>
+      <li>Who even is this? <b>Gigantamax</b></li>
+      <li>Pokémon is stinky and has evil eyes <b>Shadow</b></li>
+      <li>Shadow Pokémon with wasted potential (white smoke) <b>Purified</b></li>
+      <li>TF2 hat or other cosmetics <b>Costume</b></li>
+      <li>Cooler-than-usual scenery behind the Pokémon <b>Background</b></li>
+    </ul>
+  </details>
   <div class="bar">
     <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
     <input id="search" type="search" placeholder="Search…" aria-label="Search by name or number" />
@@ -99,6 +113,19 @@ const released = pokedex.filter((s) => s.released).length;
   :global(h1) { font-weight: 900; }
   .stats { color: var(--muted); font-size: 1rem; margin: 0.25rem 0; }
   /* Count on the left, search on the right; on phones the search takes the full width under the count. */
+  /* Closed by default so the grid doesn't move. Game-style cards: your description first, the term underneath as the punchline.
+     9 entries: one row of 9 on wide screens (lined up with the Pokédex columns), 3 x 3 everywhere else. */
+  .legend { margin: 0 0 0.75rem; }
+  .legend summary { cursor: pointer; color: var(--accent); width: fit-content; -webkit-tap-highlight-color: transparent; }
+  .legend ul { list-style: none; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.5rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (min-width: 84rem) { .legend ul { grid-template-columns: repeat(9, minmax(0, 1fr)); } }
+  .legend li {
+    display: flex; flex-direction: column; justify-content: space-between; gap: 0.35rem; text-align: center;
+    background: var(--card); border-radius: 0.6rem; padding: 0.6rem; font-size: 0.8rem; color: var(--muted);
+  }
+  .legend b { color: var(--fg); text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.85rem; }
+  @media (max-width: 40rem) { .legend li { padding: 0.5rem 0.35rem; } .legend b { font-size: 0.72rem; letter-spacing: 0; } }
+  @media (max-width: 22rem) { .legend b { font-size: 0.64rem; } } /* very small phones */
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.25rem; }
   #search {
     flex: 0 1 18rem; font: inherit; color: var(--fg);
@@ -116,7 +143,7 @@ const released = pokedex.filter((s) => s.released).length;
   }
   @media (min-width: 64rem) { .dex { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
   @media (min-width: 84rem) { .dex { grid-template-columns: repeat(9, minmax(0, 1fr)); } }
-  li { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .dex li { display: flex; flex-direction: column; align-items: center; text-align: center; }
   .ring {
     position: relative; width: 100%; max-width: 8.5rem; aspect-ratio: 1; border-radius: var(--r); padding: 4px; border: 0;
     background: var(--ring);
