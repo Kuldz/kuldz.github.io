@@ -3,7 +3,8 @@
 //   { "<tab name>": { "<normalized game name>": "/covers/<file>" } }
 // Icons are keyed by the game name read from the same XLSX (column B), not by row number, so
 // re-sorting or editing the sheet between this download and the CSV download can't mix icons up.
-// Never fails the build: on any error the site just renders placeholders.
+// On GitHub's build (CI) any failure stops the build, so the last good site stays online.
+// Locally it never fails: the site just renders placeholders.
 import { unzipSync, strFromU8 } from 'fflate';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 
@@ -88,12 +89,18 @@ try {
       covers[name][norm(gameName)] = `/covers/${out}`;
     }
   }
+  if (!Object.values(covers).some((m) => Object.keys(m).length)) throw new Error('no icons found in the sheet');
   console.log(
     `[covers] extracted ${Object.entries(covers)
       .map(([tab, m]) => `${tab}: ${Object.keys(m).length}`)
       .join(', ')}`,
   );
 } catch (err) {
+  // On GitHub's build, stop instead of publishing a site full of placeholder icons.
+  if (process.env.CI) {
+    console.error(`[covers] failed: ${err.message}`);
+    process.exit(1);
+  }
   console.warn(`[covers] skipped, using placeholders: ${err.message}`);
 }
 

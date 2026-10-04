@@ -87,6 +87,18 @@ const norm = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, ' ').tr
 const findCol = (header: Row, prefix: string) =>
   header.findIndex((h) => h?.trim().toLowerCase().startsWith(prefix));
 
+// Build guards: if the sheet comes back broken (a renamed column, an empty tab, a Google hiccup), stop the build
+// with a clear message instead of publishing an empty page. A failed build leaves the last good site online.
+// columns: { 'what the header starts with': its index }
+function requireColumns(tab: string, columns: Record<string, number>) {
+  const missing = Object.keys(columns).filter((k) => columns[k] < 0);
+  if (missing.length) throw new Error(`[sheet] "${tab}" tab has no column starting with: ${missing.join(', ')}. Was a header renamed?`);
+}
+function requireRows<T>(tab: string, rows: T[]): T[] {
+  if (!rows.length) throw new Error(`[sheet] "${tab}" tab came back with no rows.`);
+  return rows;
+}
+
 // Order of precedence: "Platform" column in the sheet, override list, then the achievements text.
 // Non-Steam PC launchers (Battle.net, Ubisoft, ...) still count as PC.
 function platformOf(column: string, name: string, achievements: string): string {
@@ -110,8 +122,9 @@ function loadGames(): Promise<Game[]> {
       franchise: findCol(header, 'franchise'),
       platform: findCol(header, 'platform'),
     };
+    requireColumns('Games', { Game: idx.name, Achievements: idx.ach, Additional: idx.notes, 'Last Played': idx.last, Review: idx.review });
 
-    return body
+    return requireRows('Games', body
       .map((row) => {
         const get = (n: number) => (n >= 0 ? (row[n] ?? '').trim() : '');
         // Formats seen: "29/80", "10/10 (all)", "30/30 (Platinum)", "23/59 Trophies", "1718/?", "-", "Platinum Trophy"
@@ -139,7 +152,7 @@ function loadGames(): Promise<Game[]> {
         };
       })
       .filter((g) => g.name)
-      .sort((a, b) => b.lastPlayedTs - a.lastPlayedTs);
+      .sort((a, b) => b.lastPlayedTs - a.lastPlayedTs));
   })();
   return gamesPromise;
 }
@@ -155,9 +168,10 @@ function loadBacklog() {
       full: findCol(header, 'hours to 100'),
       priority: findCol(header, 'priority'),
     };
+    requireColumns('Backlog', { Game: idx.name, Why: idx.why, Priority: idx.priority });
     const hours = (s: string) => (s && !Number.isNaN(Number(s)) ? Number(s) : null);
 
-    return body
+    return requireRows('Backlog', body
       .map((row) => {
         const get = (n: number) => (n >= 0 ? (row[n] ?? '').trim() : '');
         const why = get(idx.why);
@@ -172,7 +186,7 @@ function loadBacklog() {
           priority: Number(get(idx.priority)) || 0,
         };
       })
-      .filter((b) => b.name);
+      .filter((b) => b.name));
   })();
   return backlogPromise;
 }
@@ -192,12 +206,13 @@ export async function getBacklog(): Promise<BacklogItem[]> {
 export async function getMasterpieces(): Promise<Masterpiece[]> {
   const [header = [], ...body] = await fetchTab('Masterpieces');
   const idx = { name: findCol(header, 'game'), rating: findCol(header, 'rating') };
+  requireColumns('Masterpieces', { Game: idx.name, Rating: idx.rating });
   // Any other column (besides the thumbnail) is shown with its header as the label.
   const factCols = header
     .map((h, i) => ({ label: (h ?? '').trim(), i }))
     .filter((c) => c.label && c.i !== idx.name && c.i !== idx.rating && !/^thumbnail/i.test(c.label));
 
-  return body
+  return requireRows('Masterpieces', body
     .map((row) => {
       const get = (n: number) => (n >= 0 ? (row[n] ?? '').trim() : '');
       return {
@@ -208,7 +223,7 @@ export async function getMasterpieces(): Promise<Masterpiece[]> {
       };
     })
     .filter((m) => m.name)
-    .sort((a, b) => b.rating - a.rating);
+    .sort((a, b) => b.rating - a.rating));
 }
 
 export type InfoSection = { title: string; items: { label: string; value: string }[] };
@@ -229,7 +244,7 @@ export async function getInfo(): Promise<InfoSection[]> {
       sections[sections.length - 1].items.push({ label, value });
     }
   }
-  return sections;
+  return requireRows('Setup', sections);
 }
 
 // The sheet's own column headers, so the site can label things in the sheet's words.

@@ -2,7 +2,8 @@
 // Pokémon GO yet, and the thumbnails from the Poke Genie backup (shared Dropbox folder).
 // Writes public/pokedex/<file>.jpg and src/data/pokedex.json:
 //   [{ number, name, types, released, entries: [{ file, form, label, types }] }]
-// Never fails the build: on any error the page just shows nothing.
+// On GitHub's build (CI) any failure stops the build, so the last good site stays online.
+// Locally it never fails: the page just shows nothing.
 import { unzipSync } from 'fflate';
 import { parse } from 'csv-parse/sync';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -117,8 +118,14 @@ try {
   for (const s of dex) s.entries.sort((a, b) => (b.form === '') - (a.form === '') || a.form.localeCompare(b.form));
 
   const owned = dex.filter((s) => s.entries.length).length;
+  if (!owned) throw new Error('the backup has no Pokédex thumbnails (moved or emptied Dropbox folder?)');
   console.log(`[pokedex] ${owned} species with thumbnails, ${dex.filter((s) => s.released).length} released in GO`);
 } catch (err) {
+  // On GitHub's build, stop instead of publishing an empty Pokédex; the last good site stays online.
+  if (process.env.CI) {
+    console.error(`[pokedex] failed: ${err.message}`);
+    process.exit(1);
+  }
   dex = [];
   console.warn(`[pokedex] skipped: ${err.message}`);
 }
