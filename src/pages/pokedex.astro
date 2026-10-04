@@ -42,8 +42,8 @@ const released = pokedex.filter((s) => s.released).length;
       return (
         <li class:list={{ missing: !first, unreleased: !s.released }}>
           {s.entries.length > 1 ? (
-            // Several forms (e.g. Mega): clicking the circle cycles through them.
-            // All forms' pictures are stacked in the circle and only the current one is shown, so switching is instant.
+            // Several forms (e.g. Mega): clicking the picture cycles through them.
+            // All forms' pictures are stacked in the tile and only the current one is shown, so switching is instant.
             <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ form: formOf(e.label, s.name) || 'Normal', ring: ring(e.types) })))} aria-label={`${first.label}, show other forms`}>
               {s.entries.map((e, i) => <img src={e.file} alt="" loading="lazy" class:list={{ hidden: i > 0 }} />)}
               <span class="forms" aria-hidden="true">{formOf(first.label, s.name) || 'Normal'}</span>
@@ -96,11 +96,11 @@ const released = pokedex.filter((s) => s.released).length;
   @media (min-width: 84rem) { .dex { grid-template-columns: repeat(9, minmax(0, 1fr)); } }
   li { display: flex; flex-direction: column; align-items: center; text-align: center; }
   .ring {
-    position: relative; width: 100%; max-width: 8.5rem; aspect-ratio: 1; border-radius: 50%; padding: 4px; border: 0;
+    position: relative; width: 100%; max-width: 8.5rem; aspect-ratio: 1; border-radius: 18%; padding: 4px; border: 0;
     background: var(--ring);
   }
   button.ring { cursor: pointer; }
-  .ring img, .unknown { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: var(--card); }
+  .ring img, .unknown { display: block; width: 100%; height: 100%; border-radius: 15%; object-fit: cover; background: var(--card); }
   /* Stacked form pictures: hidden ones still load and stay decoded, so showing one is instant. */
   button.ring img { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); }
   button.ring img.hidden { visibility: hidden; }
