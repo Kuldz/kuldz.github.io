@@ -1,0 +1,21 @@
+---
+// GitHub Pages serves this for any URL that doesn't exist on the site.
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Not found – Kuldz">
+  <div class="center">
+  <h1>404</h1>
+  <p>
+    I'm glad you're super optimistic about the amount of pages my website has, but this URL sadly doesn't lead to any of
+    them. If you think something should be here, you can always DM me on Discord.
+  </p>
+  <p><a href="/">Back to the home page</a></p>
+  </div>
+</Base>
+
+<style>
+  /* Centred in the middle of the screen */
+  .center { min-height: 60vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  p { max-width: 42rem; }
+</style>
