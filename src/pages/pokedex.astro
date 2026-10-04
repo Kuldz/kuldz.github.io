@@ -14,7 +14,7 @@ const ring = (types: string[]) => {
 };
 
 // "Galarian Articuno" -> "Galarian", "Zacian (Crowned Sword)" -> "Crowned Sword", "Articuno" -> ""
-const formOf = (label: string, name: string) => label.replace(name, '').replace(/[()]/g, '').trim();
+const formOf = (label: string, name: string) => label.replace(name, '').replace(/[()]/g, '').replace(/\s+/g, ' ').trim();
 
 const owned =pokedex.filter((s) => s.entries.length).length;
 const released = pokedex.filter((s) => s.released).length;
