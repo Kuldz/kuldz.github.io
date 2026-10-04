@@ -21,6 +21,12 @@ const released = pokedex.filter((s) => s.released).length;
 ---
 
 <Base title="Pokédex – Kuldz" wide>
+  <Fragment slot="head">
+    <!-- Lato is the font Pokémon GO's own interface uses -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet" />
+  </Fragment>
   <h1>Pokédex</h1>
   <p class="intro">
     WIP and updated once per whenever. Based off of the images that I have set in Poke Genie, which are not very organised
@@ -71,8 +77,12 @@ const released = pokedex.filter((s) => s.released).length;
 </script>
 
 <style>
-  .stats { color: var(--muted); font-size: 0.9rem; margin: 0.25rem 0; }
-  .intro { max-width: 60rem; font-size: 0.9rem; margin: 0.25rem 0 0.75rem; }
+  /* Lato for the page content only; the header and footer keep the site's font. */
+  :global(main) { font-family: Lato, system-ui, sans-serif; }
+  :global(:root.comic main) { font-family: inherit; }
+  :global(h1) { font-weight: 900; }
+  .stats { color: var(--muted); font-size: 1rem; margin: 0.25rem 0; }
+  .intro { font-size: 1.05rem; line-height: 1.55; margin: 0.25rem 0 0.75rem; }
   .dex {
     list-style: none; padding: 0; margin: 1.25rem 0 0;
     display: grid; gap: 1.5rem 1rem;
@@ -98,8 +108,8 @@ const released = pokedex.filter((s) => s.released).length;
   /* A lone form (e.g. only a Galarian one) isn't clickable, so its badge is quieter. */
   .forms.single { background: #2a2f3a; color: var(--fg); }
   .ring { position: relative; }
-  .name { margin-top: 0.5rem; font-size: 0.95rem; font-weight: bold; overflow-wrap: anywhere; }
-  .num { color: var(--muted); font-size: 0.75rem; }
+  .name { margin-top: 0.5rem; font-size: 1.05rem; font-weight: bold; overflow-wrap: anywhere; }
+  .num { color: var(--muted); font-size: 0.85rem; }
   .missing .name { color: var(--muted); font-weight: normal; }
   .unreleased .unknown { background: #000; }
   .unreleased .name, .unreleased .num { color: #4a505c; }

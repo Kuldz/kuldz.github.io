@@ -9,6 +9,7 @@ const { title = 'Kuldz', wide = false } = Astro.props;
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+    <slot name="head" />
     <script is:inline>
       // Easter egg: a 1 in 4747 chance per visit of seeing the site in Comic Sans ("?comic" forces it).
       // "?comic" only affects that one page view and is never remembered; only the random roll is.
@@ -60,7 +61,7 @@ const { title = 'Kuldz', wide = false } = Astro.props;
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
   header, main, footer { max-width: 60rem; margin: 0 auto; padding: 1rem; }
-  .wide :is(header, main, footer) { max-width: 90rem; } /* picture grids (Pokédex) use more of a wide screen */
+  .wide :is(header, main, footer) { max-width: 90rem; } /* picture grids (Pokédex) use more of a wide screen */ /* picture grids (Pokédex) use more of a wide screen */
   header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.25rem 1.5rem; }
   header nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
   .brand { font-weight: bold; font-size: 1.25rem; }
