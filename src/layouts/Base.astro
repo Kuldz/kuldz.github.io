@@ -34,6 +34,8 @@ const { title = 'Kuldz', wide = false } = Astro.props;
         <a href="/backlog">Backlog</a>
         <a href="/masterpieces">Masterpieces</a>
         <a href="/setup">Setup</a>
+        <span class="sep" aria-hidden="true"></span>
+        <a href="/pokedex">Pokédex</a>
       </nav>
     </header>
     <main><slot /></main>
@@ -64,12 +66,15 @@ const { title = 'Kuldz', wide = false } = Astro.props;
   header, main, footer { max-width: 60rem; margin: 0 auto; padding: 1rem; }
   .wide :is(header, main, footer) { max-width: 90rem; } /* picture grids (Pokédex) use more of a wide screen */
   header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.25rem 1.5rem; }
-  header nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  header nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; }
+  /* Divider between the spreadsheet pages and separate projects (Pokédex) */
+  header nav .sep { width: 1px; height: 1em; background: var(--muted); opacity: 0.5; }
   .brand { font-weight: bold; font-size: 1.25rem; }
   footer { color: var(--muted); font-size: 0.85rem; }
   :root.comic body { font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', 'Comic Neue', cursive; }
 
   @media (max-width: 40rem) {
     header nav { font-size: 0.9rem; gap: 0.25rem 0.85rem; }
+    header nav .sep { display: none; } /* the line break already separates the groups */
   }
 </style>
