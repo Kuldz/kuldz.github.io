@@ -34,13 +34,16 @@ const released = pokedex.filter((s) => s.released).length;
     should actually have almost the entire normal Pokédex done in game. Otherwise the goal is to get the coolest possible
     pictures here, whether it's combos like costume + background or lucky + shiny.
   </p>
-  <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
+  <div class="bar">
+    <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
+    <input id="search" type="search" placeholder="Search…" aria-label="Search by name or number" />
+  </div>
 
   <ul class="dex">
     {pokedex.map((s) => {
       const first = s.entries[0];
       return (
-        <li class:list={{ missing: !first, unreleased: !s.released }}>
+        <li class:list={{ missing: !first, unreleased: !s.released }} data-search={[s.number, s.name, ...s.entries.map((e) => e.label)].join(' ').toLowerCase()}>
           {s.entries.length > 1 ? (
             // Several forms (e.g. Mega): clicking the picture cycles through them.
             // All forms' pictures are stacked in the tile and only the current one is shown, so switching is instant.
@@ -76,6 +79,17 @@ const released = pokedex.filter((s) => s.released).length;
       badge.textContent = entries[i].form;
     });
   }
+
+  // Search by name, form ("mega", "alolan") or number. A number matches exactly, so "15" doesn't show #150.
+  const search = document.querySelector<HTMLInputElement>('#search')!;
+  const tiles = [...document.querySelectorAll<HTMLElement>('.dex li')];
+  search.addEventListener('input', () => {
+    const q = search.value.trim().toLowerCase().replace(/^#/, '');
+    for (const li of tiles) {
+      const text = li.dataset.search!;
+      li.hidden = !!q && (/^\d+$/.test(q) ? text.split(' ')[0] !== q : !text.includes(q));
+    }
+  });
 </script>
 
 <style>
@@ -84,6 +98,13 @@ const released = pokedex.filter((s) => s.released).length;
   :global(:root.comic main) { font-family: inherit; }
   :global(h1) { font-weight: 900; }
   .stats { color: var(--muted); font-size: 1rem; margin: 0.25rem 0; }
+  /* Count on the left, search on the right; on phones the search takes the full width under the count. */
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.25rem; }
+  #search {
+    flex: 0 1 18rem; font: inherit; color: var(--fg);
+    background: var(--card); border: 1px solid #2a2f3a; border-radius: 0.35rem; padding: 0.45rem 0.7rem;
+  }
+  .dex li[hidden] { display: none; }
   .intro { font-size: 1.05rem; line-height: 1.55; margin: 0.25rem 0 0.75rem; }
   .dex {
     --r: 1.5rem; /* tile corner radius */
@@ -124,6 +145,7 @@ const released = pokedex.filter((s) => s.released).length;
   .unreleased .name, .unreleased .num { color: #4a505c; }
 
   @media (max-width: 40rem) {
+    #search { flex-basis: 100%; }
     .dex { --r: 1.1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 0.5rem; }
     .ring { width: 100%; max-width: 6rem; }
     .name { font-size: 0.75rem; }
