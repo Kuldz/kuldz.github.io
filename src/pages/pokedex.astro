@@ -66,6 +66,8 @@ const released = pokedex.filter((s) => s.released).length;
     const entries: { file: string; form: string; ring: string }[] = JSON.parse(button.dataset.entries!);
     const img = button.querySelector('img')!;
     const badge = button.querySelector('.forms')!;
+    // Load the other forms' pictures ahead of time so switching is instant.
+    for (const e of entries.slice(1)) new Image().src = e.file;
     let i = 0;
     button.addEventListener('click', () => {
       i = (i + 1) % entries.length;
