@@ -7,7 +7,6 @@ const games = await getGames();
 const labels = await getLabels();
 const completed = games.filter((g) => g.complete).length;
 const achievements = games.reduce((sum, g) => sum + g.earned, 0);
-const everything = games.filter((g) => g.everything).length;
 // pc and playstation first, then any others in use (e.g. switch)
 const platformLabel = (p: string) =>
   ({ pc: 'PC', playstation: 'PlayStation' } as Record<string, string>)[p] ?? p.charAt(0).toUpperCase() + p.slice(1);
@@ -25,7 +24,7 @@ const linkify = (text: string) =>
 <Base title="Games – Kuldz">
   <h1>Games</h1>
   <p class="stats">
-    {games.length} games · {completed} at 100% · {platinums} platinum {everything > 0 && `· ${everything} everything `}· {achievements.toLocaleString('en')} achievements
+    {games.length} games · {completed} at 100% · {platinums} platinum · {achievements.toLocaleString('en')} achievements
   </p>
 
   <div class="controls">
@@ -41,7 +40,6 @@ const linkify = (text: string) =>
       <button type="button" data-filter="complete" aria-pressed="false">100%</button>
       <button type="button" data-filter="progress" aria-pressed="false">Not 100%</button>
       <button type="button" data-filter="ongoing" aria-pressed="false">Ongoing</button>
-      {everything > 0 && <button type="button" data-filter="everything" aria-pressed="false">Everything</button>}
     </div>
     <div class="chips" role="group" aria-label="Platform">
       <button type="button" data-platform="all" aria-pressed="true">Any platform</button>
@@ -68,12 +66,11 @@ const linkify = (text: string) =>
         data-franchise={g.franchise}
         data-complete={g.complete}
         data-ongoing={g.ongoing}
-        data-everything={g.everything}
         data-platform={g.platform}
       >
         <summary>
           {g.icon ? <img src={g.icon} alt="" loading="lazy" class="icon" /> : <span class="icon placeholder" aria-hidden="true">{g.name[0]}</span>}
-          <span class="name">{g.name}{g.ongoing && <span class="tag">Ongoing</span>}{g.platform === 'playstation' && <span class="tag ps">PS</span>}{g.platinum && <span class="tag plat">Platinum</span>}{g.everything && <span class="tag plat">Everything</span>}</span>
+          <span class="name">{g.name}{g.ongoing && <span class="tag">Ongoing</span>}{g.platform === 'playstation' && <span class="tag ps">PS</span>}{g.platinum && <span class="tag plat">Platinum</span>}</span>
           <span class="count">{g.achievements || '–'}{g.achievements && <span class="unit"> {labels.achievements.toLowerCase()}</span>}</span>
           <span class:list={['pct', { done: g.complete }]}>{g.complete ? '100%' : g.percent >= 0 ? `${g.percent}%` : ''}</span>
           <span class="date">{g.lastPlayed}</span>
@@ -130,9 +127,8 @@ const linkify = (text: string) =>
     const q = search.value.trim().toLowerCase();
     const visible = rows
       .filter((r) => !q || r.dataset.name!.includes(q) || r.dataset.franchise!.toLowerCase().includes(q))
-            .filter((r) => {
+      .filter((r) => {
         if (filter === 'ongoing') return r.dataset.ongoing === 'true';
-        if (filter === 'everything') return r.dataset.everything === 'true';
         return filter === 'all' || (filter === 'complete') === (r.dataset.complete === 'true');
       })
       .filter((r) => platform === 'all' || r.dataset.platform === platform)

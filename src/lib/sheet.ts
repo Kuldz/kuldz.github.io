@@ -22,7 +22,6 @@ export type Game = {
   review: string;
   franchise: string;
   complete: boolean;
-  everything: boolean; // optional "Everything" column: played to pieces, beyond achievements
   ongoing: boolean; // marked "ongoing:" in the Backlog tab
 };
 
@@ -110,7 +109,6 @@ function loadGames(): Promise<Game[]> {
       review: findCol(header, 'review'),
       franchise: findCol(header, 'franchise'),
       platform: findCol(header, 'platform'),
-      everything: findCol(header, 'everything'),
     };
 
     return body
@@ -137,7 +135,6 @@ function loadGames(): Promise<Game[]> {
           review: get(idx.review),
           franchise: get(idx.franchise) || franchiseOf(get(idx.name)),
           complete: /\(all\)/i.test(achievements) || (total > 0 && earned >= total),
-          everything: !!get(idx.everything) && !/^(no|n|0|false|-)$/i.test(get(idx.everything)),
           ongoing: false,
         };
       })
@@ -216,10 +213,10 @@ export async function getMasterpieces(): Promise<Masterpiece[]> {
 
 export type InfoSection = { title: string; items: { label: string; value: string }[] };
 
-// The Info tab has no header row: a row with only its first cell filled starts a section,
+// The Setup tab has no header row: a row with only its first cell filled starts a section,
 // and rows with a label and a value belong to the section above.
 export async function getInfo(): Promise<InfoSection[]> {
-  const rows = await fetchAnyTab(['Setup', 'Info']); // the tab may be called either
+  const rows = await fetchAnyTab(['Setup']);
   const sections: InfoSection[] = [];
   for (const row of rows) {
     const label = (row[0] ?? '').trim();
