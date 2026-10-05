@@ -49,7 +49,10 @@ const released = pokedex.filter((s) => s.released).length;
     </ul>
   </details>
   <div class="bar">
-    <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
+    <div class="left">
+      <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
+      <button id="hide-unreleased" type="button" aria-pressed="false">Hide unreleased</button>
+    </div>
     <input id="search" type="search" placeholder="Search…" aria-label="Search by name or number" />
   </div>
 
@@ -97,12 +100,20 @@ const released = pokedex.filter((s) => s.released).length;
   // Search by name, form ("mega", "alolan") or number. A number matches exactly, so "15" doesn't show #150.
   const search = document.querySelector<HTMLInputElement>('#search')!;
   const tiles = [...document.querySelectorAll<HTMLElement>('.dex li')];
-  search.addEventListener('input', () => {
+  const hideUnreleased = document.querySelector<HTMLButtonElement>('#hide-unreleased')!;
+  function filter() {
     const q = search.value.trim().toLowerCase().replace(/^#/, '');
+    const noUnreleased = hideUnreleased.getAttribute('aria-pressed') === 'true';
     for (const li of tiles) {
       const text = li.dataset.search!;
-      li.hidden = !!q && (/^\d+$/.test(q) ? text.split(' ')[0] !== q : !text.includes(q));
+      const matches = !q || (/^\d+$/.test(q) ? text.split(' ')[0] === q : text.includes(q));
+      li.hidden = !matches || (noUnreleased && li.classList.contains('unreleased'));
     }
+  }
+  search.addEventListener('input', filter);
+  hideUnreleased.addEventListener('click', () => {
+    hideUnreleased.setAttribute('aria-pressed', String(hideUnreleased.getAttribute('aria-pressed') !== 'true'));
+    filter();
   });
 </script>
 
@@ -127,8 +138,16 @@ const released = pokedex.filter((s) => s.released).length;
   @media (max-width: 40rem) { .legend li { padding: 0.5rem 0.35rem; } .legend b { font-size: 0.72rem; letter-spacing: 0; } }
   @media (max-width: 22rem) { .legend b { font-size: 0.64rem; } } /* very small phones */
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.25rem; }
+  /* Count + "Hide unreleased" on the left (both about the whole list), search on the right */
+  .left { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+  /* Same pill style as the filter buttons on the Games page */
+  #hide-unreleased {
+    flex: none; font: inherit; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
+    background: var(--card); color: var(--muted); border: 1px solid #2a2f3a; border-radius: 999px; padding: 0.4rem 0.9rem;
+  }
+  #hide-unreleased[aria-pressed='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
   #search {
-    flex: 0 1 18rem; font: inherit; color: var(--fg);
+    flex: 0 1 18rem; min-width: 0; font: inherit; color: var(--fg);
     background: var(--card); border: 1px solid #2a2f3a; border-radius: 0.35rem; padding: 0.45rem 0.7rem;
   }
   .dex li[hidden] { display: none; }
