@@ -52,7 +52,8 @@ const released = pokedex.filter((s) => s.released).length;
   <div class="bar">
     <div class="left">
       <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
-      <button id="hide-unreleased" type="button" aria-pressed="false">Hide unreleased</button>
+      <button id="hide-unreleased" class="toggle" type="button" aria-pressed="false">Hide unreleased</button>
+      <button id="hide-completed" class="toggle" type="button" aria-pressed="false">Hide completed</button>
     </div>
     <input id="search" type="search" placeholder="Search…" aria-label="Search by name or number" />
   </div>
@@ -60,13 +61,19 @@ const released = pokedex.filter((s) => s.released).length;
   <ul class="dex">
     {pokedex.map((s) => {
       const first = s.entries[0];
+      // What "Hide completed" searches: the whole species if there's no picture, otherwise only its "?" forms.
+      const missingForms = s.entries.filter((e) => !e.file).map((e) => e.label);
+      const missing = !first ? `${s.number} ${s.name}` : missingForms.length ? [s.number, ...missingForms].join(' ') : undefined;
       return (
-        <li class:list={{ missing: !first, unreleased: !s.released }} data-search={[s.number, s.name, ...s.entries.map((e) => e.label)].join(' ').toLowerCase()}>
+        <li class:list={{ missing: !first, unreleased: !s.released }} data-search={[s.number, s.name, ...s.entries.filter((e) => e.file).map((e) => e.label)].join(' ').toLowerCase()} data-missing={missing?.toLowerCase()}>
           {s.entries.length > 1 ? (
-            // Several forms (e.g. Mega): clicking the picture cycles through them.
+            // Several forms (e.g. Mega): clicking the picture cycles through them, forms not pictured yet show "?".
             // All forms' pictures are stacked in the tile and only the current one is shown, so switching is instant.
-            <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ form: formOf(e.label, s.name) || 'Normal', ring: ring(e.types) })))} aria-label={`${first.label}, show other forms`}>
-              {s.entries.map((e, i) => <img src={e.file} alt="" loading="lazy" class:list={{ hidden: i > 0 }} />)}
+            <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ form: formOf(e.label, s.name) || 'Normal', ring: ring(e.types), missing: !e.file })))} aria-label={`${first.label}, show other forms`}>
+              {s.entries.map((e, i) =>
+                e.file ? <img src={e.file} alt="" loading="lazy" class:list={['face', { hidden: i > 0 }]} />
+                : <span class:list={['face unknown', { hidden: i > 0 }]} aria-hidden="true">?</span>,
+              )}
               <span class="forms" aria-hidden="true">{formOf(first.label, s.name) || 'Normal'}</span>
             </button>
           ) : (
@@ -84,38 +91,60 @@ const released = pokedex.filter((s) => s.released).length;
 </Base>
 
 <script>
+  // Each multi-form tile gets a show(i) function; "Hide completed" uses it to jump to the first missing form.
+  const showForm = new Map<HTMLButtonElement, (i: number) => void>();
+  const missingForms = new Map<HTMLButtonElement, { i: number; form: string }[]>();
   for (const button of document.querySelectorAll<HTMLButtonElement>('button.ring')) {
-    const entries: { form: string; ring: string }[] = JSON.parse(button.dataset.entries!);
-    const imgs = [...button.querySelectorAll('img')];
+    const entries: { form: string; ring: string; missing: boolean }[] = JSON.parse(button.dataset.entries!);
+    const imgs = [...button.querySelectorAll('.face')];
     const badge = button.querySelector('.forms')!;
     let i = 0;
-    button.addEventListener('click', () => {
+    const show = (next: number) => {
       imgs[i].classList.add('hidden');
-      i = (i + 1) % entries.length;
+      i = next;
       imgs[i].classList.remove('hidden');
       button.style.setProperty('--ring', entries[i].ring);
       badge.textContent = entries[i].form;
-    });
+      badge.classList.toggle('single', entries[i].missing); // grey badge for a form not pictured yet
+    };
+    button.addEventListener('click', () => show((i + 1) % entries.length));
+    showForm.set(button, show);
+    const missing = entries.flatMap((e, i) => (e.missing ? [{ i, form: e.form.toLowerCase() }] : []));
+    if (missing.length) missingForms.set(button, missing);
+  }
+  // With "Hide completed" on, show the missing form instead of a picture you already have,
+  // preferring one that matches the search ("mega" on Slowbro shows Mega, not Galarian).
+  function jumpToMissing(on: boolean, q: string) {
+    for (const [button, missing] of missingForms) {
+      showForm.get(button)!(on ? (missing.find((m) => q && m.form.includes(q)) ?? missing[0]).i : 0);
+    }
   }
 
   // Search by name, form ("mega", "alolan") or number. A number matches exactly, so "15" doesn't show #150.
   const search = document.querySelector<HTMLInputElement>('#search')!;
   const tiles = [...document.querySelectorAll<HTMLElement>('.dex li')];
+  // "Hide completed" leaves only species with something not pictured yet, and the search then looks through
+  // what's missing ("mega" = megas still needed).
   const hideUnreleased = document.querySelector<HTMLButtonElement>('#hide-unreleased')!;
+  const hideCompleted = document.querySelector<HTMLButtonElement>('#hide-completed')!;
+  const pressed = (b: HTMLButtonElement) => b.getAttribute('aria-pressed') === 'true';
   function filter() {
     const q = search.value.trim().toLowerCase().replace(/^#/, '');
-    const noUnreleased = hideUnreleased.getAttribute('aria-pressed') === 'true';
+    if (pressed(hideCompleted)) jumpToMissing(true, q);
     for (const li of tiles) {
-      const text = li.dataset.search!;
-      const matches = !q || (/^\d+$/.test(q) ? text.split(' ')[0] === q : text.includes(q));
-      li.hidden = !matches || (noUnreleased && li.classList.contains('unreleased'));
+      const text = pressed(hideCompleted) ? li.dataset.missing : li.dataset.search;
+      const matches = text !== undefined && (!q || (/^\d+$/.test(q) ? text.split(' ')[0] === q : text.includes(q)));
+      li.hidden = !matches || (pressed(hideUnreleased) && li.classList.contains('unreleased'));
     }
   }
   search.addEventListener('input', filter);
-  hideUnreleased.addEventListener('click', () => {
-    hideUnreleased.setAttribute('aria-pressed', String(hideUnreleased.getAttribute('aria-pressed') !== 'true'));
-    filter();
-  });
+  for (const b of [hideUnreleased, hideCompleted]) {
+    b.addEventListener('click', () => {
+      b.setAttribute('aria-pressed', String(!pressed(b)));
+      if (b === hideCompleted && !pressed(b)) jumpToMissing(false, ''); // back to the pictures
+      filter();
+    });
+  }
 </script>
 
 <style>
@@ -139,14 +168,14 @@ const released = pokedex.filter((s) => s.released).length;
   @media (max-width: 40rem) { .legend li { padding: 0.5rem 0.35rem; } .legend b { font-size: 0.72rem; letter-spacing: 0; } }
   @media (max-width: 22rem) { .legend b { font-size: 0.64rem; } } /* very small phones */
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.25rem; }
-  /* Count + "Hide unreleased" on the left (both about the whole list), search on the right */
+  /* Count + filter buttons on the left (all about the whole list), search on the right */
   .left { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
   /* Same pill style as the filter buttons on the Games page */
-  #hide-unreleased {
+  .toggle {
     flex: none; font: inherit; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
     background: var(--card); color: var(--muted); border: 1px solid #2a2f3a; border-radius: 999px; padding: 0.4rem 0.9rem;
   }
-  #hide-unreleased[aria-pressed='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+  .toggle[aria-pressed='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
   #search {
     flex: 0 1 18rem; min-width: 0; font: inherit; color: var(--fg);
     background: var(--card); border: 1px solid #2a2f3a; border-radius: 0.35rem; padding: 0.45rem 0.7rem;
@@ -177,15 +206,15 @@ const released = pokedex.filter((s) => s.released).length;
   .ring img, .unknown { display: block; width: 100%; height: 100%; border-radius: calc(var(--r) - 4px); object-fit: cover; }
   .unknown { background: var(--card); }
   /* Stacked form pictures: hidden ones still load and stay decoded, so showing one is instant. */
-  button.ring img { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); }
-  button.ring img.hidden { visibility: hidden; }
+  button.ring .face { position: absolute; inset: 4px; width: calc(100% - 8px); height: calc(100% - 8px); }
+  button.ring .face.hidden { visibility: hidden; }
   .unknown { display: grid; place-items: center; font-size: 2.25rem; font-weight: bold; color: var(--muted); }
   .forms {
     position: absolute; left: 50%; bottom: -0.35rem; transform: translateX(-50%); white-space: nowrap;
     font-size: 0.65rem; font-weight: bold; line-height: 1.3;
     background: var(--accent); color: var(--bg); border-radius: 999px; padding: 0.1rem 0.45rem;
   }
-  /* A lone form (e.g. only a Galarian one) isn't clickable, so its badge is quieter. */
+  /* Quieter badge: a lone form (e.g. only a Galarian one) isn't clickable, and a "?" form isn't pictured yet. */
   .forms.single { background: #2a2f3a; color: var(--fg); }
   .ring { position: relative; }
   .name { margin-top: 0.5rem; font-size: 1.05rem; font-weight: bold; overflow-wrap: anywhere; }

@@ -13,6 +13,10 @@ const BACKUP_URL =
 const POKEAPI_CSV = 'https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv';
 const UNRELEASED_URL =
   'https://pokemongo.fandom.com/api.php?action=query&list=categorymembers&cmtitle=Category:Unreleased_Pok%C3%A9mon&cmlimit=500&cmnamespace=0&format=json';
+// PvPoke's copy of the game data: every form that's out in GO, used to mark the forms not pictured yet.
+const PVPOKE_URL = 'https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster/pokemon.json';
+// Forms Poke Genie keeps under one Pokédex entry, so they're never "missing" (Pikachu's hats).
+const NO_FORMS = new Set([25]);
 const OUT_DIR = 'public/pokedex';
 const MAP_FILE = 'src/data/pokedex.json';
 const LAST_SPECIES = 1025;
@@ -51,7 +55,7 @@ const csv = async (file) => {
 let dex = [];
 
 try {
-  const [backup, speciesNames, pokemon, pokemonTypes, types, unreleasedNames] = await Promise.all([
+  const [backup, speciesNames, pokemon, pokemonTypes, types, unreleasedNames, gameForms] = await Promise.all([
     fetch(BACKUP_URL).then((r) => {
       if (!r.ok) throw new Error(`backup download failed: ${r.status}`);
       return r.arrayBuffer();
@@ -66,6 +70,12 @@ try {
       .catch((err) => {
         console.warn(`[pokedex] wiki unreachable (${err.message}), using the saved unreleased list`);
         return UNRELEASED_FALLBACK;
+      }),
+    fetch(PVPOKE_URL)
+      .then((r) => r.json())
+      .catch((err) => {
+        console.warn(`[pokedex] PvPoke unreachable (${err.message}), not marking missing forms`);
+        return [];
       }),
   ]);
 
@@ -118,6 +128,37 @@ try {
   }
   // Plain form first, then the others alphabetically
   for (const s of dex) s.entries.sort((a, b) => (b.form === '') - (a.form === '') || a.form.localeCompare(b.form));
+
+  // Forms that are out in GO but not pictured yet become "?" entries after the pictured ones.
+  // Only for species with at least one picture; a species with none is already a "?" tile.
+  // Poke Genie and PvPoke name forms differently ("Alola" vs "Alolan", "10% Forme"), so both are boiled down to a key.
+  const ALIASES = { alola: 'alolan', sword: 'crownedsword', shield: 'crownedshield' };
+  const key = (form) => {
+    const k = form.toLowerCase().replace(/forme/g, '').replace(/[^a-z0-9]/g, '');
+    return ALIASES[k] ?? k;
+  };
+  const labelFor = (name, form) =>
+    /^Mega /.test(form) ? `Mega ${name} ${form.slice(5)}`
+    : /^(Mega|Primal|Alolan|Galarian|Hisuian|Paldean|Black|White|Armored)$/.test(form) ? `${form} ${name}`
+    : `${name} (${form.replace(/ Forme$/, '')})`;
+  const formsInGo = {};
+  for (const p of gameForms) {
+    if (p.released === false || p.tags?.includes('shadow') || NO_FORMS.has(p.dex)) continue;
+    const form = /\(([^)]+)\)/.exec(p.speciesName)?.[1] ?? '';
+    (formsInGo[p.dex] ??= []).push({ form, types: p.types.filter((t) => t !== 'none') });
+  }
+  for (const s of dex) {
+    if (!s.entries.length || !formsInGo[s.number]) continue;
+    const have = new Set(s.entries.map((e) => key(e.form)));
+    // The plain picture ("487.jpg") counts as the default form, e.g. Altered Giratina or 50% Zygarde.
+    const defaultId = (identifierOf[s.number] ?? '').replace(/[^a-z0-9]/g, '');
+    for (const { form, types } of formsInGo[s.number]) {
+      const k = key(form);
+      const isDefault = k === '' || defaultId.endsWith(k);
+      if (have.has(k) || (isDefault && have.has(''))) continue;
+      s.entries.push({ file: null, form, label: form ? labelFor(s.name, form) : s.name, types: types.length ? types : s.types });
+    }
+  }
 
   const owned = dex.filter((s) => s.entries.length).length;
   if (!owned) throw new Error('the backup has no Pokédex thumbnails (moved or emptied Dropbox folder?)');
