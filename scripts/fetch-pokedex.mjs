@@ -15,8 +15,8 @@ const UNRELEASED_URL =
   'https://pokemongo.fandom.com/api.php?action=query&list=categorymembers&cmtitle=Category:Unreleased_Pok%C3%A9mon&cmlimit=500&cmnamespace=0&format=json';
 // PvPoke's copy of the game data: every form that's out in GO, used to mark the forms not pictured yet.
 const PVPOKE_URL = 'https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster/pokemon.json';
-// Forms Poke Genie keeps under one Pokédex entry, so they're never "missing" (Pikachu's hats).
-const NO_FORMS = new Set([25]);
+// Species Poke Genie keeps as one Pokédex entry, so their forms are never "missing": Pikachu (hats), Burmy, Cherrim.
+const NO_FORMS = new Set([25, 412, 421]);
 const OUT_DIR = 'public/pokedex';
 const MAP_FILE = 'src/data/pokedex.json';
 const LAST_SPECIES = 1025;
@@ -151,11 +151,13 @@ try {
     if (!s.entries.length || !formsInGo[s.number]) continue;
     const have = new Set(s.entries.map((e) => key(e.form)));
     // The plain picture ("487.jpg") counts as the default form, e.g. Altered Giratina or 50% Zygarde.
+    // PokeAPI's main entry names it ("giratina-altered"); if it doesn't ("cherrim"), the game data's first form does (Overcast).
+    const forms = formsInGo[s.number];
     const defaultId = (identifierOf[s.number] ?? '').replace(/[^a-z0-9]/g, '');
-    for (const { form, types } of formsInGo[s.number]) {
+    const defaultKey = forms.map((f) => key(f.form)).find((k) => k === '' || defaultId.endsWith(k)) ?? key(forms[0].form);
+    for (const { form, types } of forms) {
       const k = key(form);
-      const isDefault = k === '' || defaultId.endsWith(k);
-      if (have.has(k) || (isDefault && have.has(''))) continue;
+      if (have.has(k) || (k === defaultKey && have.has(''))) continue;
       s.entries.push({ file: null, form, label: form ? labelFor(s.name, form) : s.name, types: types.length ? types : s.types });
     }
   }
