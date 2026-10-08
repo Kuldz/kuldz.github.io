@@ -52,8 +52,10 @@ const released = pokedex.filter((s) => s.released).length;
   <div class="bar">
     <div class="left">
       <p class="stats">{owned} / {released} released · {pokedex.length.toLocaleString('en')} total</p>
-      <button id="hide-unreleased" class="toggle" type="button" aria-pressed="false">Hide unreleased</button>
-      <button id="hide-completed" class="toggle" type="button" aria-pressed="false">Hide completed</button>
+      <div class="toggles">
+        <button id="hide-unreleased" class="toggle" type="button" aria-pressed="false">Hide unreleased</button>
+        <button id="hide-completed" class="toggle" type="button" aria-pressed="false">Hide completed</button>
+      </div>
     </div>
     <input id="search" type="search" placeholder="Search…" aria-label="Search by name or number" />
   </div>
@@ -170,6 +172,8 @@ const released = pokedex.filter((s) => s.released).length;
   .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1.25rem; }
   /* Count + filter buttons on the left (all about the whole list), search on the right */
   .left { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+  /* The two buttons wrap as a pair, so one never ends up alone next to the count */
+  .toggles { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   /* Same pill style as the filter buttons on the Games page */
   .toggle {
     flex: none; font: inherit; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent;
@@ -225,6 +229,10 @@ const released = pokedex.filter((s) => s.released).length;
 
   @media (max-width: 40rem) {
     #search { flex-basis: 100%; }
+    .left { justify-content: center; flex-basis: 100%; }
+    .stats { flex-basis: 100%; text-align: center; }
+    .toggles { flex-basis: 100%; flex-wrap: nowrap; }
+    .toggle { flex: 1; padding-inline: 0.5rem; }
     .dex { --r: 1.1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem 0.5rem; }
     .ring { width: 100%; max-width: 6rem; }
     .name { font-size: 0.75rem; }
