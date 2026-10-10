@@ -64,17 +64,18 @@ const released = pokedex.filter((s) => s.released).length;
     {pokedex.map((s) => {
       const first = s.entries[0];
       // What "Hide completed" searches: the whole species if there's no picture, otherwise only its "?" forms.
-      const missingForms = s.entries.filter((e) => !e.file).map((e) => e.label);
+      // Forms not out in GO yet (black, no "?") can't be missing.
+      const missingForms = s.entries.filter((e) => !e.file && !e.unreleased).map((e) => e.label);
       const missing = !first ? `${s.number} ${s.name}` : missingForms.length ? [s.number, ...missingForms].join(' ') : undefined;
       return (
         <li class:list={{ missing: !first, unreleased: !s.released }} data-search={[s.number, s.name, ...s.entries.filter((e) => e.file).map((e) => e.label)].join(' ').toLowerCase()} data-missing={missing?.toLowerCase()}>
           {s.entries.length > 1 ? (
             // Several forms (e.g. Mega): clicking the picture cycles through them, forms not pictured yet show "?".
             // All forms' pictures are stacked in the tile and only the current one is shown, so switching is instant.
-            <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ form: formOf(e.label, s.name) || 'Normal', ring: ring(e.types), missing: !e.file })))} aria-label={`${first.label}, show other forms`}>
+            <button type="button" class="ring" style={`--ring:${ring(first.types)}`} data-entries={JSON.stringify(s.entries.map((e) => ({ form: formOf(e.label, s.name) || 'Normal', ring: e.unreleased ? '#2a2f3a' : ring(e.types), missing: !e.file, unreleased: !!e.unreleased })))} aria-label={`${first.label}, show other forms`}>
               {s.entries.map((e, i) =>
                 e.file ? <img src={e.file} alt="" loading="lazy" class:list={['face', { hidden: i > 0 }]} />
-                : <span class:list={['face unknown', { hidden: i > 0 }]} aria-hidden="true">?</span>,
+                : <span class:list={['face unknown', { hidden: i > 0, 'not-out': e.unreleased }]} aria-hidden="true">{e.unreleased ? '' : '?'}</span>,
               )}
               <span class="forms" aria-hidden="true">{formOf(first.label, s.name) || 'Normal'}</span>
             </button>
@@ -97,7 +98,7 @@ const released = pokedex.filter((s) => s.released).length;
   const showForm = new Map<HTMLButtonElement, (i: number) => void>();
   const missingForms = new Map<HTMLButtonElement, { i: number; form: string }[]>();
   for (const button of document.querySelectorAll<HTMLButtonElement>('button.ring')) {
-    const entries: { form: string; ring: string; missing: boolean }[] = JSON.parse(button.dataset.entries!);
+    const entries: { form: string; ring: string; missing: boolean; unreleased: boolean }[] = JSON.parse(button.dataset.entries!);
     const imgs = [...button.querySelectorAll('.face')];
     const badge = button.querySelector('.forms')!;
     let i = 0;
@@ -111,7 +112,7 @@ const released = pokedex.filter((s) => s.released).length;
     };
     button.addEventListener('click', () => show((i + 1) % entries.length));
     showForm.set(button, show);
-    const missing = entries.flatMap((e, i) => (e.missing ? [{ i, form: e.form.toLowerCase() }] : []));
+    const missing = entries.flatMap((e, i) => (e.missing && !e.unreleased ? [{ i, form: e.form.toLowerCase() }] : []));
     if (missing.length) missingForms.set(button, missing);
   }
   // With "Hide completed" on, show the missing form instead of a picture you already have,
@@ -224,7 +225,7 @@ const released = pokedex.filter((s) => s.released).length;
   .name { margin-top: 0.5rem; font-size: 1.05rem; font-weight: bold; overflow-wrap: anywhere; }
   .num { color: var(--muted); font-size: 0.85rem; }
   .missing .name { color: var(--muted); font-weight: normal; }
-  .unreleased .unknown { background: #000; }
+  .unreleased .unknown, .unknown.not-out { background: #000; }
   .unreleased .name, .unreleased .num { color: #4a505c; }
 
   @media (max-width: 40rem) {

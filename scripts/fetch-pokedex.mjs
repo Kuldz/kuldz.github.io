@@ -1,7 +1,8 @@
 // Builds the Pokédex page's data: every species (#1-#1025) with name, types, whether it's out in
 // Pokémon GO yet, and the thumbnails from the Poke Genie backup (shared Dropbox folder).
 // Writes public/pokedex/<file>.jpg and src/data/pokedex.json:
-//   [{ number, name, types, released, entries: [{ file, form, label, types }] }]
+//   [{ number, name, types, released, entries: [{ file, form, label, types, unreleased? }] }]
+// file is null for a form not pictured yet; unreleased marks a form that isn't out in GO.
 // On GitHub's build (CI) any failure stops the build, so the last good site stays online.
 // Locally it never fails: the page just shows nothing.
 import { unzipSync } from 'fflate';
@@ -143,9 +144,13 @@ try {
     : `${name} (${form.replace(/ Forme$/, '')})`;
   const formsInGo = {};
   for (const p of gameForms) {
-    if (p.released === false || p.tags?.includes('shadow') || NO_FORMS.has(p.dex)) continue;
+    if (p.tags?.includes('shadow') || NO_FORMS.has(p.dex)) continue;
     const form = /\(([^)]+)\)/.exec(p.speciesName)?.[1] ?? '';
-    (formsInGo[p.dex] ??= []).push({ form, types: p.types.filter((t) => t !== 'none') });
+    // Named forms that aren't out yet (Pirouette Meloetta) are kept and shown like unreleased species;
+    // unnamed unreleased entries are just duplicates in the game data.
+    const unreleased = p.released === false;
+    if (unreleased && !form) continue;
+    (formsInGo[p.dex] ??= []).push({ form, unreleased, types: p.types.filter((t) => t !== 'none') });
   }
   for (const s of dex) {
     if (!s.entries.length || !formsInGo[s.number]) continue;
@@ -154,11 +159,15 @@ try {
     // PokeAPI's main entry names it ("giratina-altered"); if it doesn't ("cherrim"), the game data's first form does (Overcast).
     const forms = formsInGo[s.number];
     const defaultId = (identifierOf[s.number] ?? '').replace(/[^a-z0-9]/g, '');
-    const defaultKey = forms.map((f) => key(f.form)).find((k) => k === '' || defaultId.endsWith(k)) ?? key(forms[0].form);
-    for (const { form, types } of forms) {
+    const released = forms.filter((f) => !f.unreleased).map((f) => key(f.form));
+    const defaultKey = released.find((k) => k === '' || defaultId.endsWith(k)) ?? released[0];
+    for (const { form, unreleased, types } of forms) {
       const k = key(form);
       if (have.has(k) || (k === defaultKey && have.has(''))) continue;
-      s.entries.push({ file: null, form, label: form ? labelFor(s.name, form) : s.name, types: types.length ? types : s.types });
+      s.entries.push({
+        file: null, form, label: form ? labelFor(s.name, form) : s.name, types: types.length ? types : s.types,
+        ...(unreleased && { unreleased: true }),
+      });
     }
   }
 
