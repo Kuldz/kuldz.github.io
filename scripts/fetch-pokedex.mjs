@@ -17,7 +17,9 @@ const UNRELEASED_URL =
 // PvPoke's copy of the game data: every form that's out in GO, used to mark the forms not pictured yet.
 const PVPOKE_URL = 'https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster/pokemon.json';
 // Forms PvPoke still marks unreleased but that are out in GO (battle-only, shown in the in-game Pokédex like Blade Aegislash).
-const OUT_IN_GO = new Set(['Aegislash (Blade)', 'Mimikyu (Busted)']);
+const OUT_IN_GO = new Set(['Aegislash (Blade)']);
+// Forms Poke Genie has no Pokédex entry for, so they can never be pictured.
+const NOT_IN_POKE_GENIE = new Set(['Mimikyu (Busted)']);
 // Species Poke Genie keeps as one Pokédex entry, so their forms are never "missing": Pikachu (hats), Burmy, Cherrim.
 const NO_FORMS = new Set([25, 412, 421]);
 const OUT_DIR = 'public/pokedex';
@@ -150,7 +152,7 @@ try {
     : `${name} (${form.replace(/ Forme$/, '')})`;
   const formsInGo = {};
   for (const p of gameForms) {
-    if (p.tags?.includes('shadow') || NO_FORMS.has(p.dex)) continue;
+    if (p.tags?.includes('shadow') || NO_FORMS.has(p.dex) || NOT_IN_POKE_GENIE.has(p.speciesName)) continue;
     const form = /\(([^)]+)\)/.exec(p.speciesName)?.[1] ?? '';
     // Named forms that aren't out yet (Pirouette Meloetta) are kept and shown like unreleased species;
     // unnamed unreleased entries are just duplicates in the game data.
