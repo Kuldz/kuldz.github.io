@@ -16,6 +16,8 @@ const UNRELEASED_URL =
   'https://pokemongo.fandom.com/api.php?action=query&list=categorymembers&cmtitle=Category:Unreleased_Pok%C3%A9mon&cmlimit=500&cmnamespace=0&format=json';
 // PvPoke's copy of the game data: every form that's out in GO, used to mark the forms not pictured yet.
 const PVPOKE_URL = 'https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster/pokemon.json';
+// Forms PvPoke still marks unreleased but that are out in GO (battle-only, shown in the in-game Pokédex like Blade Aegislash).
+const OUT_IN_GO = new Set(['Aegislash (Blade)', 'Mimikyu (Busted)']);
 // Species Poke Genie keeps as one Pokédex entry, so their forms are never "missing": Pikachu (hats), Burmy, Cherrim.
 const NO_FORMS = new Set([25, 412, 421]);
 const OUT_DIR = 'public/pokedex';
@@ -44,7 +46,9 @@ const FORMS = {
   White: { api: 'white', label: (n) => `White ${n}` },
   Armored: { api: 'armored', label: (n) => `Armored ${n}` },
   Sword: { api: 'crowned', label: (n) => `${n} (Crowned Sword)` },
-  Shield: { api: 'crowned', label: (n) => `${n} (Crowned Shield)` },
+  Shield: { api: 'crowned', label: (n) => (n === 'Zamazenta' ? `${n} (Crowned Shield)` : `${n} (Shield)`) }, // also Aegislash
+  10: { api: '10', label: (n) => `${n} (10%)` },
+  50: { api: '50', label: (n) => `${n} (50%)` },
 };
 
 const csv = async (file) => {
@@ -116,6 +120,8 @@ try {
     // Some forms come with the species name glued on ("Deoxysattack"): drop it and capitalise the rest ("Attack").
     const prefix = species.name.toLowerCase().replace(/[^a-z]/g, '');
     let form = rawForm.toLowerCase().startsWith(prefix) ? rawForm.slice(prefix.length) : rawForm;
+    // Others come with a short tag in front ("FormDusk", "PumpLarge", "OriBaile", "agsShield", "zyg50"): drop it too.
+    form = form.replace(/^(Form|Pump|Ori|ags|zyg)(?=[A-Z0-9])/, '');
     form = form.charAt(0).toUpperCase() + form.slice(1);
     const f = FORMS[form];
     // Types: PokeAPI's form ("deoxys-attack", "rattata-alola"); falls back to the species' types if there's no match.
@@ -148,7 +154,7 @@ try {
     const form = /\(([^)]+)\)/.exec(p.speciesName)?.[1] ?? '';
     // Named forms that aren't out yet (Pirouette Meloetta) are kept and shown like unreleased species;
     // unnamed unreleased entries are just duplicates in the game data.
-    const unreleased = p.released === false;
+    const unreleased = p.released === false && !OUT_IN_GO.has(p.speciesName);
     if (unreleased && !form) continue;
     (formsInGo[p.dex] ??= []).push({ form, unreleased, types: p.types.filter((t) => t !== 'none') });
   }
@@ -161,6 +167,10 @@ try {
     const defaultId = (identifierOf[s.number] ?? '').replace(/[^a-z0-9]/g, '');
     const released = forms.filter((f) => !f.unreleased).map((f) => key(f.form));
     const defaultKey = released.find((k) => k === '' || defaultId.endsWith(k)) ?? released[0];
+    // A picture whose form the game data doesn't know means Poke Genie named it in a new way: say so in the build log.
+    for (const e of s.entries) {
+      if (e.form && !forms.some((f) => key(f.form) === key(e.form))) console.warn(`[pokedex] unrecognised form: ${e.file}`);
+    }
     for (const { form, unreleased, types } of forms) {
       const k = key(form);
       if (have.has(k) || (k === defaultKey && have.has(''))) continue;
