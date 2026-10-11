@@ -49,6 +49,8 @@ const FORMS = {
   Armored: { api: 'armored', label: (n) => `Armored ${n}` },
   Sword: { api: 'crowned', label: (n) => `${n} (Crowned Sword)` },
   Shield: { api: 'crowned', label: (n) => (n === 'Zamazenta' ? `${n} (Crowned Shield)` : `${n} (Shield)`) }, // also Aegislash
+  Three: { api: 'family-of-three', label: (n) => `${n} (Family of Three)` },
+  Four: { api: 'family-of-four', label: (n) => `${n} (Family of Four)` },
   10: { api: '10', label: (n) => `${n} (10%)` },
   50: { api: '50', label: (n) => `${n} (50%)` },
 };
@@ -122,8 +124,8 @@ try {
     // Some forms come with the species name glued on ("Deoxysattack"): drop it and capitalise the rest ("Attack").
     const prefix = species.name.toLowerCase().replace(/[^a-z]/g, '');
     let form = rawForm.toLowerCase().startsWith(prefix) ? rawForm.slice(prefix.length) : rawForm;
-    // Others come with a short tag in front ("FormDusk", "PumpLarge", "OriBaile", "agsShield", "zyg50"): drop it too.
-    form = form.replace(/^(Form|Pump|Ori|ags|zyg)(?=[A-Z0-9])/, '');
+    // Others come with a short tag in front ("FormDusk", "formFour", "PumpLarge", "OriBaile", "agsShield", "zyg50"): drop it too.
+    form = form.replace(/^([Ff]orm|Pump|Ori|ags|zyg)(?=[A-Z0-9])/, '');
     form = form.charAt(0).toUpperCase() + form.slice(1);
     const f = FORMS[form];
     // Types: PokeAPI's form ("deoxys-attack", "rattata-alola"); falls back to the species' types if there's no match.
@@ -169,9 +171,15 @@ try {
     const defaultId = (identifierOf[s.number] ?? '').replace(/[^a-z0-9]/g, '');
     const released = forms.filter((f) => !f.unreleased).map((f) => key(f.form));
     const defaultKey = released.find((k) => k === '' || defaultId.endsWith(k)) ?? released[0];
-    // A picture whose form the game data doesn't know means Poke Genie named it in a new way: say so in the build log.
+    // A form name the game data doesn't know is usually Poke Genie's name for the plain one
+    // ("Roaming" Gimmighoul, "Male" Oinkologne), so it counts as that.
+    // Regional forms are their own entry even when the game data skips them (Hisuian Basculin next to the normal one).
+    // If the plain one is already pictured, it's a new naming quirk: say so in the build log.
     for (const e of s.entries) {
-      if (e.form && !forms.some((f) => key(f.form) === key(e.form))) console.warn(`[pokedex] unrecognised form: ${e.file}`);
+      if (!e.form || forms.some((f) => key(f.form) === key(e.form))) continue;
+      if (/^(Alola|Galarian|Hisuian|Paldean)$/.test(e.form)) continue;
+      if (!have.has('') && !have.has(defaultKey)) have.add('');
+      else console.warn(`[pokedex] unrecognised form: ${e.file}`);
     }
     for (const { form, unreleased, types } of forms) {
       const k = key(form);
