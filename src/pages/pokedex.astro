@@ -90,6 +90,13 @@ const released = pokedex.filter((s) => s.released).length;
         </li>
       );
     })}
+    {/* Fills the empty spot after #1025 (9 and 3 columns leave one) until there are more Pokémon */}
+    <li class="to-top">
+      <button type="button" class="ring" id="to-top" aria-label="Back to top"><span class="unknown" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+        </span></button>
+      <span class="name">The-Button-That-Goes-Back-to-the-Very-Top</span>
+    </li>
   </ul>
 </Base>
 
@@ -97,7 +104,7 @@ const released = pokedex.filter((s) => s.released).length;
   // Each multi-form tile gets a show(i) function; "Hide completed" uses it to jump to the first missing form.
   const showForm = new Map<HTMLButtonElement, (i: number) => void>();
   const missingForms = new Map<HTMLButtonElement, { i: number; form: string }[]>();
-  for (const button of document.querySelectorAll<HTMLButtonElement>('button.ring')) {
+  for (const button of document.querySelectorAll<HTMLButtonElement>('button.ring[data-entries]')) {
     const entries: { form: string; ring: string; missing: boolean; unreleased: boolean }[] = JSON.parse(button.dataset.entries!);
     const imgs = [...button.querySelectorAll('.face')];
     const badge = button.querySelector('.forms')!;
@@ -123,9 +130,12 @@ const released = pokedex.filter((s) => s.released).length;
     }
   }
 
+  // Scrolls up without leaving "#top" in the address bar
+  document.querySelector('#to-top')!.addEventListener('click', () => window.scrollTo(0, 0));
+
   // Search by name, form ("mega", "alolan") or number. A number matches exactly, so "15" doesn't show #150.
   const search = document.querySelector<HTMLInputElement>('#search')!;
-  const tiles = [...document.querySelectorAll<HTMLElement>('.dex li')];
+  const tiles = [...document.querySelectorAll<HTMLElement>('.dex li:not(.to-top)')];
   // "Hide completed" leaves only species with something not pictured yet, and the search then looks through
   // what's missing ("mega" = megas still needed).
   const hideUnreleased = document.querySelector<HTMLButtonElement>('#hide-unreleased')!;
@@ -139,6 +149,8 @@ const released = pokedex.filter((s) => s.released).length;
       const matches = text !== undefined && (!q || (/^\d+$/.test(q) ? text.split(' ')[0] === q : text.includes(q)));
       li.hidden = !matches || (pressed(hideUnreleased) && li.classList.contains('unreleased'));
     }
+    // Search results are short, no need to go back up
+    document.querySelector<HTMLElement>('.to-top')!.hidden = q !== '';
   }
   search.addEventListener('input', filter);
   for (const b of [hideUnreleased, hideCompleted]) {
@@ -226,6 +238,15 @@ const released = pokedex.filter((s) => s.released).length;
   .num { color: var(--muted); font-size: 0.85rem; }
   .missing .name { color: var(--muted); font-weight: normal; }
   .unreleased .unknown, .unknown.not-out { background: #000; }
+  /* Back-to-top tile: same shape as the others, in the accent colour */
+  .to-top .ring { --ring: var(--accent); display: block; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .to-top .ring:focus { outline: none; }
+  .to-top .ring:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .to-top .unknown { color: var(--accent); }
+  .to-top svg { width: 40%; height: 40%; }
+  .to-top .name { color: var(--accent); font-weight: normal; }
+  /* With 5 columns the 1025 tiles fill the last row exactly, so it would sit alone on a new row */
+  @media (min-width: 40.0625rem) and (max-width: 63.99rem) { .dex li.to-top { display: none; } }
   .unreleased .name, .unreleased .num { color: #4a505c; }
 
   @media (max-width: 40rem) {
