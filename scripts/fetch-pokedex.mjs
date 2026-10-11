@@ -7,7 +7,7 @@
 // Locally it never fails: the page just shows nothing.
 import { unzipSync } from 'fflate';
 import { parse } from 'csv-parse/sync';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
 const BACKUP_URL =
   'https://www.dropbox.com/scl/fo/ylzwetaxk4n9mealtzbq1/AETzNFTnOTe07HAAJOF1mJc?rlkey=2fykbx9bbpx6k2mgj1pmd1fhx&dl=1';
@@ -22,6 +22,10 @@ const OUT_IN_GO = new Set(['Aegislash (Blade)']);
 const NOT_IN_POKE_GENIE = new Set(['Mimikyu (Busted)']);
 // Species Poke Genie keeps as one Pokédex entry, so their forms are never "missing": Pikachu (hats), Burmy, Cherrim.
 const NO_FORMS = new Set([25, 412, 421]);
+// Local copy of the last downloaded backup. "node scripts/fetch-pokedex.mjs --cached" reuses it instead of
+// downloading again: Dropbox temporarily blocks the shared link after too many downloads.
+const CACHE_FILE = '.cache/pokegenie-backup.zip';
+const useCache = process.argv.includes('--cached') && existsSync(CACHE_FILE);
 const OUT_DIR = 'public/pokedex';
 const MAP_FILE = 'src/data/pokedex.json';
 const LAST_SPECIES = 1025;
@@ -65,10 +69,19 @@ let dex = [];
 
 try {
   const [backup, speciesNames, pokemon, pokemonTypes, types, unreleasedNames, gameForms] = await Promise.all([
-    fetch(BACKUP_URL).then((r) => {
-      if (!r.ok) throw new Error(`backup download failed: ${r.status}`);
-      return r.arrayBuffer();
-    }),
+    useCache
+      ? readFileSync(CACHE_FILE)
+      : fetch(BACKUP_URL).then(async (r) => {
+          if (!r.ok) throw new Error(`backup download failed: ${r.status}`);
+          // A blocked link answers with a web page instead of the zip
+          if (r.headers.get('content-type')?.includes('text/html')) throw new Error('Dropbox link temporarily disabled (too many downloads)');
+          const zip = Buffer.from(await r.arrayBuffer());
+          if (!process.env.CI) {
+            mkdirSync('.cache', { recursive: true });
+            writeFileSync(CACHE_FILE, zip);
+          }
+          return zip;
+        }),
     csv('pokemon_species_names.csv'),
     csv('pokemon.csv'),
     csv('pokemon_types.csv'),
@@ -149,16 +162,20 @@ try {
     return ALIASES[k] ?? k;
   };
   const labelFor = (name, form) =>
-    /^Mega /.test(form) ? `Mega ${name} ${form.slice(5)}`
+    FORMS[form] ? FORMS[form].label(name)
+    : /^Mega /.test(form) ? `Mega ${name} ${form.slice(5)}`
     : /^(Mega|Primal|Alolan|Galarian|Hisuian|Paldean|Black|White|Armored)$/.test(form) ? `${form} ${name}`
     : `${name} (${form.replace(/ Forme$/, '')})`;
   const formsInGo = {};
   for (const p of gameForms) {
     if (p.tags?.includes('shadow') || NO_FORMS.has(p.dex) || NOT_IN_POKE_GENIE.has(p.speciesName)) continue;
-    const form = /\(([^)]+)\)/.exec(p.speciesName)?.[1] ?? '';
+    // Maushold is written "Maushold_family_of_three"; Family of Four is the plain Maushold.
+    const family = /_family_of_(\w+)$/.exec(p.speciesName)?.[1];
+    if (family === 'four') continue;
+    const form = family === 'three' ? 'Three' : /\(([^)]+)\)/.exec(p.speciesName)?.[1] ?? '';
     // Named forms that aren't out yet (Pirouette Meloetta) are kept and shown like unreleased species;
     // unnamed unreleased entries are just duplicates in the game data.
-    const unreleased = p.released === false && !OUT_IN_GO.has(p.speciesName);
+    const unreleased = p.released === false && !OUT_IN_GO.has(p.speciesName) && !family;
     if (unreleased && !form) continue;
     (formsInGo[p.dex] ??= []).push({ form, unreleased, types: p.types.filter((t) => t !== 'none') });
   }
