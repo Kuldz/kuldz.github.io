@@ -20,8 +20,8 @@ const PVPOKE_URL = 'https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/d
 const OUT_IN_GO = new Set(['Aegislash (Blade)']);
 // Forms Poke Genie has no Pokédex entry for, so they can never be pictured.
 const NOT_IN_POKE_GENIE = new Set(['Mimikyu (Busted)']);
-// Species Poke Genie keeps as one Pokédex entry, so their forms are never "missing": Pikachu (hats), Burmy, Cherrim.
-const NO_FORMS = new Set([25, 412, 421]);
+// Species Poke Genie keeps as one Pokédex entry, so their forms are never "missing": Pikachu (hats), Burmy, Cherrim, Tatsugiri.
+const NO_FORMS = new Set([25, 412, 421, 978]);
 // Local copy of the last downloaded backup. "node scripts/fetch-pokedex.mjs --cached" reuses it instead of
 // downloading again: Dropbox temporarily blocks the shared link after too many downloads.
 const CACHE_FILE = '.cache/pokegenie-backup.zip';
