@@ -83,7 +83,6 @@ const released = pokedex.filter((s) => s.released).length;
           ) : (
             <span class="ring" style={`--ring:${s.released ? ring(first?.types ?? s.types) : '#2a2f3a'}`}>
               {first ? <img src={first.file} alt="" loading="lazy" /> : <span class="unknown" aria-hidden="true">{s.released ? '?' : ''}</span>}
-              {first && formOf(first.label, s.name) && <span class="forms single">{formOf(first.label, s.name)}</span>}
             </span>
           )}
           <span class="name">{s.name}</span>
