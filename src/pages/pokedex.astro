@@ -89,7 +89,7 @@ const released = pokedex.filter((s) => s.released).length;
           )}
           <span class="name">{s.name}</span>
           {/* The hundo mark belongs to the dex entry (next to the number), not to the picture */}
-          <span class="num">#{s.number}{hundos.has(s.number) && <span class="hundo" title="Hundo registered in the game's Pokédex (rarely the Pokémon in the picture)">★ 100%</span>}</span>
+          <span class="num">#{s.number}{hundos.has(s.number) && <span class="hundo" tabindex="0" data-tip={"Hundo registered in the game's Pokédex\n(rarely the Pokémon in the picture though)"}>★ 100%</span>}</span>
         </li>
       );
     })}
@@ -101,6 +101,7 @@ const released = pokedex.filter((s) => s.released).length;
       <span class="name">The-Button-That-Goes-Back-to-the-Very-Top</span>
     </li>
   </ul>
+  <div id="tip" role="tooltip" hidden></div>
 </Base>
 
 <script>
@@ -132,6 +133,33 @@ const released = pokedex.filter((s) => s.released).length;
       showForm.get(button)!(on ? (missing.find((m) => q && m.form.includes(q)) ?? missing[0]).i : 0);
     }
   }
+
+  // Hover box for ★ 100% (and tap on phones, which can't hover). One shared box, kept inside the screen.
+  const tip = document.querySelector<HTMLElement>('#tip')!;
+  let tipFor: HTMLElement | null = null;
+  function showTip(el: HTMLElement) {
+    tipFor = el;
+    tip.textContent = el.dataset.tip!;
+    tip.hidden = false;
+    tip.style.left = tip.style.top = '0px'; // measure it at full width, not squeezed against the screen edge
+    const r = el.getBoundingClientRect();
+    const tile = el.closest('li')!.getBoundingClientRect(); // centred under the tile, not just under "★ 100%"
+    const left = Math.min(Math.max(8, tile.left + tile.width / 2 - tip.offsetWidth / 2), document.documentElement.clientWidth - tip.offsetWidth - 8);
+    // Below the mark so it doesn't cover the name; above only when there's no room at the bottom of the screen
+    const below = r.bottom + 6;
+    tip.style.left = `${left}px`;
+    tip.style.top = `${below + tip.offsetHeight <= innerHeight - 8 ? below : r.top - tip.offsetHeight - 6}px`;
+  }
+  const hideTip = () => { tip.hidden = true; tipFor = null; };
+  for (const el of document.querySelectorAll<HTMLElement>('.hundo')) {
+    el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') showTip(el); });
+    el.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') hideTip(); });
+    // Keyboard focus shows it; a tap toggles it (a tap also focuses, so focus alone only counts for the keyboard)
+    el.addEventListener('focus', () => { if (el.matches(':focus-visible')) showTip(el); });
+    el.addEventListener('blur', hideTip);
+    el.addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') tipFor === el ? hideTip() : showTip(el); });
+  }
+  addEventListener('scroll', hideTip, { passive: true });
 
   // Scrolls up without leaving "#top" in the address bar
   document.querySelector('#to-top')!.addEventListener('click', () => window.scrollTo(0, 0));
@@ -239,7 +267,20 @@ const released = pokedex.filter((s) => s.released).length;
   .ring { position: relative; }
   .name { margin-top: 0.5rem; font-size: 1.05rem; font-weight: bold; overflow-wrap: anywhere; }
   .num { color: var(--muted); font-size: 0.85rem; }
-  .hundo { margin-left: 0.35rem; color: #ff7a93; font-weight: bold; white-space: nowrap; }
+  .hundo {
+    margin-left: 0.35rem; color: #ff7a93; font-weight: bold; white-space: nowrap; cursor: default;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hundo:focus { outline: none; }
+  .hundo:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 0.2rem; }
+  /* Same look as the rest of the page instead of the browser's plain tooltip */
+  #tip {
+    position: fixed; z-index: 10; max-width: min(24rem, calc(100vw - 16px)); pointer-events: none;
+    background: var(--card); color: var(--fg); border: 1px solid #2a2f3a; border-radius: 0.5rem;
+    padding: 0.45rem 0.65rem; font-size: 0.8rem; line-height: 1.4; text-align: center;
+    white-space: pre-line; /* the brackets part goes on its own line */
+  }
+  #tip[hidden] { display: none; }
   .missing .name { color: var(--muted); font-weight: normal; }
   .unreleased .unknown, .unknown.not-out { background: #000; }
   /* Back-to-top tile: same shape as the others, in the accent colour */
