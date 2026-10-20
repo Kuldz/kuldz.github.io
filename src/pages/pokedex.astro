@@ -1,6 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import pokedex from '../data/pokedex.json'; // written by scripts/fetch-pokedex.mjs
+import hundoList from '../data/hundos.json'; // Pokédex numbers with a hundo registered in the game, kept by hand
+const hundos = new Set(hundoList);
 
 // Ring colours like Poke Genie's Pokédex: one colour per type, two-type Pokémon get both.
 const typeColor: Record<string, string> = {
@@ -86,7 +88,8 @@ const released = pokedex.filter((s) => s.released).length;
             </span>
           )}
           <span class="name">{s.name}</span>
-          <span class="num">#{s.number}</span>
+          {/* The hundo mark belongs to the dex entry (next to the number), not to the picture */}
+          <span class="num">#{s.number}{hundos.has(s.number) && <span class="hundo" title="Hundo registered in the game's Pokédex (rarely the Pokémon in the picture)">★ 100%</span>}</span>
         </li>
       );
     })}
@@ -236,6 +239,7 @@ const released = pokedex.filter((s) => s.released).length;
   .ring { position: relative; }
   .name { margin-top: 0.5rem; font-size: 1.05rem; font-weight: bold; overflow-wrap: anywhere; }
   .num { color: var(--muted); font-size: 0.85rem; }
+  .hundo { margin-left: 0.35rem; color: #ff7a93; font-weight: bold; white-space: nowrap; }
   .missing .name { color: var(--muted); font-weight: normal; }
   .unreleased .unknown, .unknown.not-out { background: #000; }
   /* Back-to-top tile: same shape as the others, in the accent colour */
