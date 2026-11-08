@@ -111,8 +111,12 @@ try {
   const identifierOf = Object.fromEntries(pokemon.map((p) => [p.id, p.identifier]));
 
   const today = new Date().toISOString().slice(0, 10);
+  // The wiki's category is sometimes wrong (in November 2026 it listed Pikachu), so a species
+  // the game data has a released form of counts as released anyway.
+  const releasedInGo = new Set(gameForms.filter((p) => p.released !== false && !p.tags?.includes('shadow')).map((p) => p.dex));
+  const numberOf = Object.fromEntries(Object.entries(nameOf).map(([number, name]) => [name, Number(number)]));
   const unreleased = new Set([
-    ...unreleasedNames,
+    ...unreleasedNames.filter((name) => !releasedInGo.has(numberOf[name])),
     ...Object.entries(UPCOMING).filter(([, date]) => date > today).map(([name]) => name),
   ]);
 
