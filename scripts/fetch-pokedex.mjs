@@ -16,10 +16,8 @@ const UNRELEASED_URL =
   'https://pokemongo.fandom.com/api.php?action=query&list=categorymembers&cmtitle=Category:Unreleased_Pok%C3%A9mon&cmlimit=500&cmnamespace=0&format=json';
 // PvPoke's copy of the game data: every form that's out in GO, used to mark the forms not pictured yet.
 const PVPOKE_URL = 'https://raw.githubusercontent.com/pvpoke/pvpoke/master/src/data/gamemaster/pokemon.json';
-// Forms PvPoke still marks unreleased but that are out in GO (battle-only, shown in the in-game Pokédex like Blade Aegislash).
-const OUT_IN_GO = new Set(['Aegislash (Blade)']);
-// Forms Poke Genie has no Pokédex entry for, so they can never be pictured.
-const NOT_IN_POKE_GENIE = new Set(['Mimikyu (Busted)']);
+// Forms that can never be pictured: battle-only forms nobody can keep in storage (Busted Mimikyu, Blade Aegislash).
+const NOT_IN_POKE_GENIE = new Set(['Mimikyu (Busted)', 'Aegislash (Blade)']);
 // Species Poke Genie keeps as one Pokédex entry, so their forms are never "missing": Pikachu (hats), Burmy, Cherrim, Tatsugiri.
 const NO_FORMS = new Set([25, 412, 421, 978]);
 // Local copy of the last downloaded backup. "node scripts/fetch-pokedex.mjs --cached" reuses it instead of
@@ -179,7 +177,7 @@ try {
     const form = family === 'three' ? 'Three' : /\(([^)]+)\)/.exec(p.speciesName)?.[1] ?? '';
     // Named forms that aren't out yet (Pirouette Meloetta) are kept and shown like unreleased species;
     // unnamed unreleased entries are just duplicates in the game data.
-    const unreleased = p.released === false && !OUT_IN_GO.has(p.speciesName) && !family;
+    const unreleased = p.released === false && !family;
     if (unreleased && !form) continue;
     (formsInGo[p.dex] ??= []).push({ form, unreleased, types: p.types.filter((t) => t !== 'none') });
   }
